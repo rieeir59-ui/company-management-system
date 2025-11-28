@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -81,10 +82,9 @@ export default function ProposalRequestPage() {
     };
 
     const handleDownloadPdf = () => {
-        const doc = new jsPDF();
+        const doc = new jsPDF() as any;
         const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
         const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
-
         let yPos = 20;
 
         doc.setFontSize(14);
@@ -96,9 +96,9 @@ export default function ProposalRequestPage() {
         doc.setFont('helvetica', 'normal');
 
         const addLine = (label: string, value: string, y: number, x: number) => {
-            doc.text(`${label}: ${value}`, x, y);
+            doc.text(`${label}: ${value || 'N/A'}`, x, y);
         };
-
+        
         const col1X = 14;
         const col2X = 120;
 
@@ -155,6 +155,10 @@ export default function ProposalRequestPage() {
         yPos += 20;
 
         const addSignatureLine = (label: string) => {
+            if (yPos > pageHeight - 30) {
+                doc.addPage();
+                yPos = 20;
+            }
             doc.line(col1X, yPos, col1X + 60, yPos);
             yPos += 5;
             doc.text(label, col1X, yPos);
@@ -166,8 +170,8 @@ export default function ProposalRequestPage() {
         addSignatureLine('Contractor');
         addSignatureLine('Field');
         addSignatureLine('Other');
-
-        const pageCount = (doc as any).internal.getNumberOfPages();
+        
+        const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
           doc.setFontSize(8);
