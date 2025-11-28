@@ -1,10 +1,8 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useFirebase } from '@/firebase/provider';
 import { collection, query, where, getDocs, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -20,6 +18,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -27,6 +32,7 @@ import Link from 'next/link';
 import { getFormUrlFromFileName } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { onAuthStateChanged } from 'firebase/auth';
 
 type SavedRecordData = {
     category: string;
@@ -252,42 +258,55 @@ export default function SavedRecordsPage() {
                                 <p>You haven't saved any records yet. Save a document from another page to see it here.</p>
                             </div>
                         ) : (
-                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {records.map(record => {
-                                    const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
-                                    return (
-                                        <Card key={record.id} className="flex flex-col">
-                                            <CardHeader>
-                                                <CardTitle>{record.projectName}</CardTitle>
-                                                <CardDescription>{record.fileName}</CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="flex-grow">
-                                                <div className="text-sm text-muted-foreground">
-                                                    Saved on: {record.createdAt.toDate().toLocaleDateString()}
-                                                </div>
-                                            </CardContent>
-                                            <CardFooter className="flex-col items-stretch space-y-2">
-                                                <div className="flex gap-2">
-                                                    {formUrl && (
-                                                        <Button asChild className="flex-1">
-                                                            <Link href={`${formUrl}?id=${record.id}`}>
-                                                                <Edit className="mr-2 h-4 w-4" /> Edit
-                                                            </Link>
+                             <Carousel
+                                opts={{
+                                    align: "start",
+                                }}
+                                className="w-full"
+                            >
+                                <CarouselContent>
+                                    {records.map(record => {
+                                        const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
+                                        return (
+                                            <CarouselItem key={record.id} className="md:basis-1/2 lg:basis-1/3">
+                                                <div className="p-1">
+                                                <Card className="flex flex-col h-full">
+                                                    <CardHeader>
+                                                        <CardTitle>{record.projectName}</CardTitle>
+                                                        <CardDescription>{record.fileName}</CardDescription>
+                                                    </CardHeader>
+                                                    <CardContent className="flex-grow">
+                                                        <div className="text-sm text-muted-foreground">
+                                                            Saved on: {record.createdAt.toDate().toLocaleDateString()}
+                                                        </div>
+                                                    </CardContent>
+                                                    <CardFooter className="flex-col items-stretch space-y-2">
+                                                        <div className="flex gap-2">
+                                                            {formUrl && (
+                                                                <Button asChild className="flex-1">
+                                                                    <Link href={`${formUrl}?id=${record.id}`}>
+                                                                        <Edit className="mr-2 h-4 w-4" /> Edit
+                                                                    </Link>
+                                                                </Button>
+                                                            )}
+                                                            <Button variant="destructive" size="icon" onClick={() => openDeleteDialog(record)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                        <Button onClick={() => handleDownload(record)} variant="outline" className="w-full">
+                                                            <Download className="mr-2 h-4 w-4" />
+                                                            Download PDF
                                                         </Button>
-                                                    )}
-                                                    <Button variant="destructive" size="icon" onClick={() => openDeleteDialog(record)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    </CardFooter>
+                                                </Card>
                                                 </div>
-                                                <Button onClick={() => handleDownload(record)} variant="outline" className="w-full">
-                                                    <Download className="mr-2 h-4 w-4" />
-                                                    Download PDF
-                                                </Button>
-                                            </CardFooter>
-                                        </Card>
-                                    )
-                                })}
-                            </div>
+                                            </CarouselItem>
+                                        )
+                                    })}
+                                </CarouselContent>
+                                <CarouselPrevious className="ml-12" />
+                                <CarouselNext className="mr-12" />
+                            </Carousel>
                         )}
                     </CardContent>
                  </Card>
@@ -309,4 +328,3 @@ export default function SavedRecordsPage() {
         </>
     );
 }
-
