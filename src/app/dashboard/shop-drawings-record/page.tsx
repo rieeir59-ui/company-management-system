@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -173,6 +172,13 @@ export default function ShopDrawingsRecordPage() {
             theme: 'grid',
             headStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold', halign: 'center', valign: 'middle' },
             styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
+            didParseCell: function (data) {
+                // Center align the 'X' marks
+                const checkboxColumns = [8, 9, 10, 11, 13, 14, 15, 16];
+                if (data.body && checkboxColumns.includes(data.column.index)) {
+                    data.cell.styles.halign = 'center';
+                }
+            }
         });
         
         doc.save('shop-drawing-record.pdf');
