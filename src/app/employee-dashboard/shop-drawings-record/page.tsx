@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -70,10 +71,7 @@ export default function ShopDrawingsRecordPage() {
     };
     
     const handleActionCheckboxChange = (id: number, value: string, checked: boolean) => {
-        const currentActions = rows.find(row => row.id === id)?.action || [];
-        const newActions = checked 
-            ? [...currentActions, value] 
-            : currentActions.filter(v => v !== value);
+        const newActions = checked ? [value] : [];
         handleRowChange(id, 'action', newActions);
     };
 
@@ -157,15 +155,15 @@ export default function ShopDrawingsRecordPage() {
             row.dateSent,
             row.numCopies,
             row.dateRetdReferred,
-            row.action.includes('approved') ? '✓' : '',
-            row.action.includes('approved_as_noted') ? '✓' : '',
-            row.action.includes('revise_resubmit') ? '✓' : '',
-            row.action.includes('not_approved') ? '✓' : '',
+            row.action.includes('approved'),
+            row.action.includes('approved_as_noted'),
+            row.action.includes('revise_resubmit'),
+            row.action.includes('not_approved'),
             row.dateRetdAction,
-            row.copiesTo.includes('Contractor') ? '✓' : '',
-            row.copiesTo.includes('Owner') ? '✓' : '',
-            row.copiesTo.includes('Field') ? '✓' : '',
-            row.copiesTo.includes('File') ? '✓' : '',
+            row.copiesTo.includes('Contractor'),
+            row.copiesTo.includes('Owner'),
+            row.copiesTo.includes('Field'),
+            row.copiesTo.includes('File'),
         ]);
 
         doc.autoTable({
@@ -175,11 +173,14 @@ export default function ShopDrawingsRecordPage() {
             theme: 'grid',
             headStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold', halign: 'center', valign: 'middle' },
             styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
-            didParseCell: function (data) {
-                // Center align the '✓' marks
+            didDrawCell: function (data) {
                 const checkboxColumns = [8, 9, 10, 11, 13, 14, 15, 16];
-                if (data.body && checkboxColumns.includes(data.column.index)) {
-                    data.cell.styles.halign = 'center';
+                if (data.section === 'body' && checkboxColumns.includes(data.column.index)) {
+                    if (data.cell.raw === true) {
+                        doc.setFillColor(0, 0, 0);
+                        doc.rect(data.cell.x + 2, data.cell.y + 2, 3, 3, 'F');
+                    }
+                    data.cell.text = ''; // Clear the raw boolean value
                 }
             }
         });
