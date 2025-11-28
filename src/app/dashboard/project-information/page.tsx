@@ -12,8 +12,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Save, Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
 import { addDoc, collection, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -22,10 +20,6 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useSearchParams } from 'next/navigation';
-
-interface jsPDFWithAutoTable extends jsPDF {
-    autoTable: (options: any) => jsPDF;
-}
 
 const Section = ({ title, children, className }: { title: string; children: React.ReactNode, className?: string }) => (
     <div className={`mb-6 pt-4 border-t border-dashed ${className}`}>
@@ -289,208 +283,13 @@ function ProjectInformationComponent() {
             errorEmitter.emit('permission-error', permissionError);
         }
     };
-
-    const handleDownloadPdf = () => {
-        const doc = new jsPDF() as jsPDFWithAutoTable;
-        let yPos = 20;
-
-        const primaryColor = [45, 95, 51];
-        const headingFillColor = [240, 240, 240];
-
-        const addSectionTitle = (title: string) => {
-            doc.addPage();
-            yPos = 20;
-            doc.setFontSize(14);
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text(title, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-            yPos += 15;
-            doc.setTextColor(0, 0, 0);
-        }
-        
-        const addDataAsTable = (title: string, data: [string, string][]) => {
-            if (yPos > 250) { addPageWithHeaderAndFooter() };
-            doc.autoTable({
-                head: [[{ content: title, styles: { fillColor: headingFillColor, textColor: 0, fontStyle: 'bold' } }]],
-                body: data,
-                startY: yPos,
-                theme: 'grid',
-                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 } },
-            });
-            yPos = (doc as any).autoTable.previous.finalY + 10;
-        }
-
-        const addPageWithHeaderAndFooter = () => {
-            doc.addPage();
-            yPos = 20;
-            addHeader();
-        };
-
-        const addHeader = () => {
-             doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text('PROJECT INFORMATION', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-            yPos += 15;
-            doc.setTextColor(0, 0, 0);
-        }
-
-        addHeader();
-
-        // Basic Info
-        addDataAsTable('Project Information', [
-            ['Project', formState.project],
-            ['Address', formState.address],
-            ['Project No', formState.projectNo],
-            ['Prepared By', formState.preparedBy],
-            ['Prepared Date', formState.preparedDate],
-        ]);
-
-        // Owner Info
-        addDataAsTable('About Owner', [
-            ['Full Name', formState.ownerFullName],
-            ['Office Address', formState.ownerOfficeAddress],
-            ['Residence Address', formState.ownerResAddress],
-            ['Office Phone', formState.ownerOfficePhone],
-            ['Residence Phone', formState.ownerResPhone],
-        ]);
-
-        // Representative Info
-        addDataAsTable("Owner's Project Representative", [
-            ['Name', formState.repName],
-            ['Office Address', formState.repOfficeAddress],
-            ['Residence Address', formState.repResAddress],
-            ['Office Phone', formState.repOfficePhone],
-            ['Residence Phone', formState.repResPhone],
-        ]);
-
-        // About Project
-        const reqs = [
-          formState.reqArchitectural && 'Architectural Designing',
-          formState.reqInterior && 'Interior Decoration',
-          formState.reqLandscaping && 'Landscaping',
-          formState.reqTurnkey && 'Turnkey',
-          formState.reqOther && `Other: ${formState.reqOtherText}`
-        ].filter(Boolean).join(', ');
-        addDataAsTable('About Project', [
-            ['Address', formState.projectAboutAddress],
-            ['Project Reqt.', reqs]
-        ]);
-        
-        addPageWithHeaderAndFooter();
-
-        // Project Details
-        addDataAsTable('Project Details', [
-            ['Project Type', formState.projectType],
-            ['Project Status', formState.projectStatus],
-            ['Project Area', formState.projectArea],
-            ['Special Requirements', formState.specialRequirements]
-        ]);
-        
-        // Project's Cost
-        addDataAsTable("Project's Cost", [
-            ['Architectural Designing', formState.costArchitectural],
-            ['Interior Decoration', formState.costInterior],
-            ['Landscaping', formState.costLandscaping],
-            ['Construction', formState.costConstruction],
-            ['Turnkey', formState.costTurnkey],
-            ['Other', formState.costOther]
-        ]);
-        
-        addPageWithHeaderAndFooter();
-
-        // Dates
-        addDataAsTable('Dates Concerned with Project', [
-            ['First Information about Project', formState.dateFirstInfo],
-            ['First Meeting', formState.dateFirstMeeting],
-            ['First Working on Project', formState.dateFirstWorking],
-            ['First Proposal', `Start: ${formState.dateFirstProposalStart}, End: ${formState.dateFirstProposalEnd}`],
-            ['Second Proposal', `Start: ${formState.dateSecondProposalStart}, End: ${formState.dateSecondProposalEnd}`],
-            ['First Information (2)', formState.dateFirstInfo2],
-            ['Working on Finalized Proposal', formState.dateWorkingFinalized],
-            ['Revised Presentation', formState.dateRevisedPresentation],
-            ['Quotation', formState.dateQuotation],
-            ['Drawings', `Start: ${formState.dateDrawingsStart}, End: ${formState.dateDrawingsEnd}`],
-            ['Other Major Milestones', formState.dateOtherMilestones]
-        ]);
-        
-        // Provided by Owner
-        addDataAsTable('Provided by Owner', [
-            ['Program', formState.ownerProgram],
-            ['Suggested Schedule', formState.ownerSchedule],
-            ['Legal Docs', formState.ownerLegal],
-            ['Land Survey', formState.ownerLandSurvey],
-            ['Geo-Technical', formState.ownerGeoTech],
-            ['Existing Drawings', formState.ownerExistingDrawings]
-        ]);
-
-        addPageWithHeaderAndFooter();
-        
-        // Compensation
-        addDataAsTable('Compensation', [
-            ['Initial Payment', formState.compInitialPayment],
-            ['Basic Services (% of Cost)', formState.compBasicServices],
-            ['Schematic Design (%)', formState.compSchematic],
-            ['Design Development (%)', formState.compDesignDev],
-            ["Construction Doc's (%)", formState.compConstructionDocs],
-            ['Bidding/Negotiation (%)', formState.compBidding],
-            ['Construction Contract Admin (%)', formState.compConstructionAdmin],
-            ['Additional Services (Multiple of)', formState.compAdditionalServices],
-            ['Reimbursable Expenses', formState.compReimbursable],
-            ['Other', formState.compOther]
-        ]);
-
-        // Consultants
-        const consultantsBody = consultantTypes.map(type => [
-            type,
-            consultants[type]?.withinFee || '',
-            consultants[type]?.additionalFee || '',
-            consultants[type]?.architect || '',
-            consultants[type]?.owner || '',
-        ]).filter(row => row.slice(1).some(val => val));
-        
-        doc.autoTable({
-            head: [['Consultants']],
-            body: [],
-            startY: yPos,
+    
+    const handleDownload = () => {
+        toast({
+            title: "Preparing Download",
+            description: "Your PDF will be generated shortly. Please use the print dialog to 'Save as PDF'.",
         });
-        yPos = (doc as any).autoTable.previous.finalY;
-
-        doc.autoTable({
-            head: [['Type', 'Within Fee', 'Additional', 'By Architect', 'By Owner']],
-            body: consultantsBody,
-            startY: yPos, theme: 'grid',
-            headStyles: { fontStyle: 'bold', fillColor: headingFillColor, textColor: 0 },
-            styles: { fontSize: 8 },
-        });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
-
-        // Requirements
-        const requirementsBody = residenceRequirements.map(req => [
-            req, requirements[req].nos, requirements[req].remarks,
-        ]).filter(row => row.slice(1).some(val => val));
-        
-        doc.autoTable({
-            head: [['Requirements - Residence']],
-            body: [],
-            startY: yPos,
-        });
-        yPos = (doc as any).autoTable.previous.finalY;
-
-        doc.autoTable({
-            head: [['Description', 'Nos.', 'Remarks']],
-            body: requirementsBody,
-            startY: yPos, theme: 'grid',
-            headStyles: { fontStyle: 'bold', fillColor: headingFillColor, textColor: 0 },
-            styles: { fontSize: 8 },
-        });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
-
-        // Notes
-        addDataAsTable('Special Confidential Requirements', [[ 'Notes', formState.specialConfidential ]]);
-        addDataAsTable('Miscellaneous Notes', [[ 'Notes', formState.miscNotes ]]);
-
-        doc.save(`${formState.project || 'project'}_information.pdf`);
-        toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
+        window.print();
     };
     
     if (isLoading) {
@@ -710,7 +509,7 @@ function ProjectInformationComponent() {
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
                             <Button type="button" onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                            <Button type="button" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                            <Button type="button" onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </form>
                 </CardContent>

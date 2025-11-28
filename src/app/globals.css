@@ -81,17 +81,38 @@ body {
 }
 
 @media print {
-  .no-print {
-    display: none;
-  }
-  body, .printable-area {
+  body {
     background: white !important;
     color: black !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  }
+  .no-print {
+    display: none !important;
   }
   .printable-area {
-    box-shadow: none;
-    border: none;
+    box-shadow: none !important;
+    border: none !important;
   }
+  /* Ensure ShadCN components print correctly */
+  .card, .table, .input, .textarea, .label, .button {
+    color: black !important;
+    border-color: #ccc !important;
+  }
+  .text-primary {
+    color: hsl(var(--primary)) !important;
+  }
+  .font-bold {
+    font-weight: bold !important;
+  }
+   /* Hide all sidebars when printing */
+  [data-sidebar="sidebar"], [data-sidebar="header"], .p-4, .sm\:p-6, .lg\:p-8 {
+    display: none !important;
+  }
+
+  /* Expand the main content to full width */
+  [data-sidebar-inset] {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
 }
