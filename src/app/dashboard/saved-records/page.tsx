@@ -5,7 +5,7 @@ import { useFirebase } from '@/firebase/provider';
 import { collection, query, orderBy, type Timestamp, FirestoreError, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
@@ -316,7 +316,7 @@ export default function SavedRecordsPage() {
         <>
             <div className="space-y-8">
                 <DashboardPageHeader
-                    title="All Saved Records"
+                    title="Saved Records"
                     description="Access all saved project checklists and documents from all employees."
                     imageUrl={image?.imageUrl || ''}
                     imageHint={image?.imageHint || ''}
@@ -341,7 +341,7 @@ export default function SavedRecordsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                             <div className="border rounded-lg">
+                             <div className="border rounded-lg overflow-x-auto">
                                 {selectedCategory === 'Task Assignment' ? (
                                     <Table>
                                         <TableHeader>

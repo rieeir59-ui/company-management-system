@@ -47,6 +47,7 @@ import {
   CheckSquare,
   FileX,
   FilePen,
+  File as FileIcon,
   FileUp,
   CircleDollarSign,
   Clipboard,
@@ -61,7 +62,6 @@ import {
   Building2,
   Home,
   Save,
-  ClipboardCheck,
   Eye,
   Archive,
 } from 'lucide-react';
@@ -91,7 +91,7 @@ const menuItems = [
     { href: '/employee-dashboard/project-bylaws', label: 'Project Bylaws', icon: FileKey },
     { href: '/employee-dashboard/proposal-request', label: 'Proposal Request', icon: Briefcase },
     { href: '/employee-dashboard/drawings', label: 'Drawings', icon: Palette },
-    { href: '/employee-dashboard/shop-drawings-record', label: 'Shop Drawings Record', icon: File },
+    { href: '/employee-dashboard/shop-drawings-record', label: 'Shop Drawings Record', icon: FileIcon },
     { href: '/employee-dashboard/project-chart-studio', label: 'Project Chart (Studio)', icon: BarChart2 },
     { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
     { href: '/employee-dashboard/list-of-sub-consultants', label: 'List Of Sub-consultants', icon: BookUser },
@@ -136,7 +136,7 @@ const bankTimelineItems = [
 ];
 
 const savedRecordsItems = [
-    { href: '/employee-dashboard/saved-records', label: 'All Saved Records', icon: Archive },
+    { href: '/employee-dashboard/saved-records', label: 'Saved Records', icon: Archive },
     { href: '/employee-dashboard/saved-records?filter=My+Projects', label: 'My Projects', icon: Briefcase },
     { href: '/employee-dashboard/saved-records?filter=Task+Assignment', label: 'Task Reports', icon: ClipboardCheck },
     { href: '/employee-dashboard/saved-records?filter=Site+Visit+Proforma', label: 'Site Visit Reports', icon: Eye },

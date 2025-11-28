@@ -5,7 +5,7 @@ import { useFirebase } from '@/firebase/provider';
 import { collection, query, where, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -205,12 +205,13 @@ export default function SavedRecordsPage() {
                         setIsLoading(false);
                     },
                     (serverError: FirestoreError) => {
+                        console.error("Firestore Error:", serverError);
                         const permissionError = new FirestorePermissionError({
-                            path: `savedRecords`, 
-                            operation: 'list',
+                            path: 'savedRecords', // Simplified path
+                            operation: 'list'
                         });
                         errorEmitter.emit('permission-error', permissionError);
-                        setError("Could not fetch your saved records.");
+                        setError(permissionError.message);
                         setIsLoading(false);
                     }
                 );
@@ -316,7 +317,7 @@ export default function SavedRecordsPage() {
         <>
             <div className="space-y-8">
                 <DashboardPageHeader
-                    title="Your Saved Records"
+                    title="Saved Records"
                     description="Access your saved project checklists and other documents."
                     imageUrl={image?.imageUrl || ''}
                     imageHint={image?.imageHint || ''}
@@ -345,7 +346,7 @@ export default function SavedRecordsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="border rounded-lg">
+                             <div className="border rounded-lg overflow-x-auto">
                                 {selectedCategory === 'Task Assignment' ? (
                                      <Table>
                                         <TableHeader>
