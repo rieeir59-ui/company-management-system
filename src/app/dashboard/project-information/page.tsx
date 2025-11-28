@@ -90,6 +90,24 @@ export default function ProjectInformationPage() {
         dateDrawingsStart: '',
         dateDrawingsEnd: '',
         dateOtherMilestones: '',
+        ownerProgram: '',
+        ownerSchedule: '',
+        ownerLegal: '',
+        ownerLandSurvey: '',
+        ownerGeoTech: '',
+        ownerExistingDrawings: '',
+        compInitialPayment: '',
+        compBasicServices: '',
+        compSchematic: '',
+        compDesignDev: '',
+        compConstructionDocs: '',
+        compBidding: '',
+        compConstructionAdmin: '',
+        compAdditionalServices: '',
+        compReimbursable: '',
+        compOther: '',
+        specialConfidential: '',
+        miscNotes: '',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -154,18 +172,30 @@ export default function ProjectInformationPage() {
             doc.setFont('helvetica', 'bold');
             doc.text(label, margin, yPos);
             doc.setFont('helvetica', 'normal');
-            doc.text(value, margin + 50, yPos);
-            doc.line(margin + 50, yPos + 1, pageWidth - margin, yPos + 1);
-            yPos += 8;
+            const splitValue = doc.splitTextToSize(value, pageWidth - margin * 2 - 50);
+            doc.text(splitValue, margin + 60, yPos, { maxWidth: pageWidth - margin * 2 - 60 });
+            yPos += (splitValue.length * 5) + 3;
         };
+        
+        const addTextArea = (label: string, value: string) => {
+             if (yPos > 260) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text(label, margin, yPos);
+            yPos += 7;
+            doc.setFont('helvetica', 'normal');
+            const splitText = doc.splitTextToSize(value, pageWidth - margin * 2 - 5);
+            doc.text(splitText, margin + 5, yPos);
+            yPos += (splitText.length * 5) + 5;
+        }
 
         const addRadioLine = (label: string, options: string[], selectedValue: string) => {
-             if (yPos > 270) { doc.addPage(); yPos = 20; }
+            if (yPos > 270) { doc.addPage(); yPos = 20; }
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.text(label, margin, yPos);
             doc.setFont('helvetica', 'normal');
-            let xPos = margin + 50;
+            let xPos = margin + 60;
             options.forEach(opt => {
                 const radioChar = opt.toLowerCase() === selectedValue ? '◉' : '○';
                 doc.text(`${radioChar} ${opt}`, xPos, yPos);
@@ -175,7 +205,8 @@ export default function ProjectInformationPage() {
         }
 
         const addCheckboxLine = (label: string, isChecked: boolean, text: string) => {
-            doc.text(`${isChecked ? '☑' : '☐'} ${text}`, margin + 50, yPos);
+             if (yPos > 270) { doc.addPage(); yPos = 20; }
+            doc.text(`${isChecked ? '☑' : '☐'} ${text}`, margin + 60, yPos);
             yPos += 7;
         };
 
@@ -183,10 +214,17 @@ export default function ProjectInformationPage() {
              if (yPos > 270) { doc.addPage(); yPos = 20; }
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            doc.text(label, margin, yPos);
+            doc.text(label, margin + 10, yPos);
             doc.setFont('helvetica', 'normal');
-            doc.text(value, margin + 70, yPos);
-            doc.line(margin + 70, yPos + 1, pageWidth - margin, yPos + 1);
+            doc.text(value, margin + 80, yPos);
+            yPos += 8;
+        }
+        
+        const addSectionTitle = (title: string) => {
+          if (yPos > 260) { doc.addPage(); yPos = 20; }
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title, margin, yPos);
             yPos += 8;
         }
 
@@ -197,7 +235,7 @@ export default function ProjectInformationPage() {
         addLine('Prepared Date:', formState.preparedDate);
         yPos += 5;
 
-        doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.text('About Owner:', margin, yPos); yPos += 8;
+        addSectionTitle('About Owner:');
         addLine('Full Name:', formState.ownerFullName);
         addLine('Address (Office):', formState.ownerOfficeAddress);
         addLine('Address (Res.):', formState.ownerResAddress);
@@ -205,7 +243,7 @@ export default function ProjectInformationPage() {
         addLine('Phone (Res.):', formState.ownerResPhone);
         yPos += 5;
         
-        doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.text("Owner's Project Representative:", margin, yPos); yPos += 8;
+        addSectionTitle("Owner's Project Representative:");
         addLine('Name:', formState.repName);
         addLine('Address (Office):', formState.repOfficeAddress);
         addLine('Address (Res.):', formState.repResAddress);
@@ -213,9 +251,9 @@ export default function ProjectInformationPage() {
         addLine('Phone (Res.):', formState.repResPhone);
         yPos += 5;
 
-        doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.text('About Project:', margin, yPos); yPos += 8;
+        addSectionTitle('About Project:');
         addLine('Address:', formState.projectAboutAddress);
-        doc.setFont('helvetica', 'bold'); doc.text('Project Reqt.', margin, yPos); yPos -= 3;
+        doc.setFont('helvetica', 'bold'); doc.text('Project Reqt.', margin, yPos);
         addCheckboxLine('', formState.reqArchitectural, 'i. Architectural Designing');
         addCheckboxLine('', formState.reqInterior, 'ii. Interior Decoration');
         addCheckboxLine('', formState.reqLandscaping, 'iii. Landscaping');
@@ -227,7 +265,7 @@ export default function ProjectInformationPage() {
         addRadioLine('Project Status:', ['New', 'Addition', 'Rehabilitation/Renovation'], formState.projectStatus);
         
         addLine('Project Area:', formState.projectArea);
-        addLine('Special Requirements of Project:', formState.specialRequirements);
+        addTextArea('Special Requirements of Project:', formState.specialRequirements);
         
         doc.setFont('helvetica', 'bold'); doc.text("Project's Cost:", margin, yPos); yPos += 8;
         addCostLine('i. Architectural Designing', formState.costArchitectural);
@@ -237,10 +275,11 @@ export default function ProjectInformationPage() {
         addCostLine('v. Turnkey', formState.costTurnkey);
         addCostLine('vi. Other', formState.costOther);
         yPos += 5;
-
-        doc.setLineDash([2, 2], 0); doc.line(margin, yPos, pageWidth - margin, yPos); doc.setLineDash([], 0); yPos += 10;
         
-        doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.text('Dates Concerned with Project:', margin, yPos); yPos += 8;
+        doc.addPage();
+        yPos = 20;
+        
+        addSectionTitle('Dates Concerned with Project:');
         addLine('First Information about Project:', formState.dateFirstInfo);
         addLine('First Meeting:', formState.dateFirstMeeting);
         addLine('First Working on Project:', formState.dateFirstWorking);
@@ -251,7 +290,41 @@ export default function ProjectInformationPage() {
         addLine('Revised Presentation:', formState.dateRevisedPresentation);
         addLine('Quotation:', formState.dateQuotation);
         addLine('Drawings:', `Start: ${formState.dateDrawingsStart}, Completion: ${formState.dateDrawingsEnd}`);
-        addLine('Other Major Projects Milestone Dates:', formState.dateOtherMilestones);
+        addTextArea('Other Major Projects Milestone Dates:', formState.dateOtherMilestones);
+        yPos += 5;
+
+        addSectionTitle('Provided by Owner:');
+        addTextArea('Program:', formState.ownerProgram);
+        addTextArea('Suggested Schedule:', formState.ownerSchedule);
+        addTextArea('Legal Site Description & Other Concerned Documents:', formState.ownerLegal);
+        addTextArea('Land Survey Report:', formState.ownerLandSurvey);
+        addTextArea('Geo-Technical, Tests and Other Site Information:', formState.ownerGeoTech);
+        addTextArea("Existing Structure's Drawings:", formState.ownerExistingDrawings);
+        yPos += 5;
+
+        doc.addPage();
+        yPos = 20;
+
+        addSectionTitle('Compensation:');
+        addLine('Initial Payment:', formState.compInitialPayment);
+        addLine('Basic Services:', `${formState.compBasicServices} % of Cost of Construction`);
+        doc.setFont('helvetica', 'bold'); doc.text('Breakdown by Phase:', margin, yPos); yPos+=8;
+        addLine('Schematic Design:', `${formState.compSchematic} %`);
+        addLine('Design Development:', `${formState.compDesignDev} %`);
+        addLine("Construction Doc's:", `${formState.compConstructionDocs} %`);
+        addLine('Bidding / Negotiation:', `${formState.compBidding} %`);
+        addLine('Construction Contract Admin:', `${formState.compConstructionAdmin} %`);
+        addLine('Additional Services:', `Multiple of ${formState.compAdditionalServices} Times Direct Cost to Architect`);
+        addLine('Reimbursable Expenses:', formState.compReimbursable);
+        addLine('Other:', formState.compOther);
+        yPos += 5;
+
+        addSectionTitle('Special Confidential Requirements:');
+        addTextArea('', formState.specialConfidential);
+        yPos+= 5;
+        
+        addSectionTitle('Miscellaneous Notes:');
+        addTextArea('', formState.miscNotes);
 
         doc.save('project-information.pdf');
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
@@ -376,7 +449,41 @@ export default function ProjectInformationPage() {
                           </div>
                           <InputRow label="Other Major Projects Milestone Dates:" id="dateOtherMilestones" value={formState.dateOtherMilestones} onChange={handleChange} type="date" />
                         </Section>
+                        
+                        <Section title="Provided by Owner">
+                          <InputRow label="Program:" id="ownerProgram" value={formState.ownerProgram} onChange={handleChange} />
+                          <InputRow label="Suggested Schedule:" id="ownerSchedule" value={formState.ownerSchedule} onChange={handleChange} />
+                          <InputRow label="Legal Site Description & Other Concerned Documents:" id="ownerLegal" value={formState.ownerLegal} onChange={handleChange} />
+                          <InputRow label="Land Survey Report:" id="ownerLandSurvey" value={formState.ownerLandSurvey} onChange={handleChange} />
+                          <InputRow label="Geo-Technical, Tests and Other Site Information:" id="ownerGeoTech" value={formState.ownerGeoTech} onChange={handleChange} />
+                          <InputRow label="Existing Structure's Drawings:" id="ownerExistingDrawings" value={formState.ownerExistingDrawings} onChange={handleChange} />
+                        </Section>
 
+                        <Section title="Compensation">
+                           <InputRow label="Initial Payment:" id="compInitialPayment" value={formState.compInitialPayment} onChange={handleChange} />
+                           <InputRow label="Basic Services (% of Cost of Construction):" id="compBasicServices" value={formState.compBasicServices} onChange={handleChange} />
+                           <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
+                            <Label className="md:text-right font-bold">Breakdown by Phase:</Label>
+                            <div className="md:col-span-2 space-y-2">
+                              <InputRow label="Schematic Design:" id="compSchematic" value={formState.compSchematic} onChange={handleChange} />
+                              <InputRow label="Design Development:" id="compDesignDev" value={formState.compDesignDev} onChange={handleChange} />
+                              <InputRow label="Construction Doc's:" id="compConstructionDocs" value={formState.compConstructionDocs} onChange={handleChange} />
+                              <InputRow label="Bidding / Negotiation:" id="compBidding" value={formState.compBidding} onChange={handleChange} />
+                              <InputRow label="Construction Contract Admin:" id="compConstructionAdmin" value={formState.compConstructionAdmin} onChange={handleChange} />
+                            </div>
+                           </div>
+                           <InputRow label="Additional Services (Multiple of Times Direct Cost to Architect):" id="compAdditionalServices" value={formState.compAdditionalServices} onChange={handleChange} />
+                           <InputRow label="Reimbursable Expenses:" id="compReimbursable" value={formState.compReimbursable} onChange={handleChange} />
+                           <InputRow label="Other:" id="compOther" value={formState.compOther} onChange={handleChange} />
+                        </Section>
+
+                        <Section title="Special Confidential Requirements">
+                          <Textarea name="specialConfidential" value={formState.specialConfidential} onChange={handleChange} rows={4} />
+                        </Section>
+
+                         <Section title="Miscellaneous Notes">
+                          <Textarea name="miscNotes" value={formState.miscNotes} onChange={handleChange} rows={4} />
+                        </Section>
 
                         <div className="flex justify-end gap-4 mt-12">
                             <Button type="button" onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
