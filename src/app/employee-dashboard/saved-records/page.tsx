@@ -6,10 +6,10 @@ import { collection, query, where, orderBy, type Timestamp, onSnapshot, Firestor
 import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Loader2, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -132,7 +132,7 @@ const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
 const handleDownload = (record: SavedRecord) => {
     const doc = new jsPDF() as any;
     generateDefaultPdf(doc, record);
-    doc.save(`${record.projectName.replace(/\s+/g, '_')}_${record.fileName.replace(/\s+/g, '_')}.pdf`);
+    doc.output('dataurlnewwindow');
 };
 
 export default function SavedRecordsPage() {
@@ -198,7 +198,8 @@ export default function SavedRecordsPage() {
         return () => authUnsubscribe();
     }, [firestore, auth, currentUser, isUserLoading]);
 
-    const openDeleteDialog = (record: SavedRecord) => {
+    const openDeleteDialog = (e: React.MouseEvent, record: SavedRecord) => {
+        e.stopPropagation();
         setRecordToDelete(record);
         setIsDeleteDialogOpen(true);
     };
@@ -284,49 +285,50 @@ export default function SavedRecordsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Project Name</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {groupedRecords[selectedCategory].length > 0 ? (
-                                        groupedRecords[selectedCategory].map(record => {
-                                            const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
-                                            return (
-                                                <TableRow key={record.id}>
-                                                    <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                    <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
-                                                    <TableCell className="flex gap-2 justify-end">
-                                                        {formUrl && (
-                                                            <Button asChild variant="ghost" size="icon">
-                                                                <Link href={`${formUrl}?id=${record.id}`}>
-                                                                    <Edit className="h-4 w-4" />
-                                                                </Link>
-                                                            </Button>
-                                                        )}
-                                                        <Button variant="ghost" size="icon" onClick={() => handleDownload(record)}>
-                                                            <Download className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}>
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })
-                                    ) : (
+                            <div className="border rounded-lg">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
-                                                No records found for this category.
-                                            </TableCell>
+                                            <TableHead>Project Name</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right w-[100px]">Actions</TableHead>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {groupedRecords[selectedCategory].length > 0 ? (
+                                            groupedRecords[selectedCategory].map(record => {
+                                                const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
+                                                return (
+                                                    <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
+                                                        <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                        <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                                                {formUrl && (
+                                                                    <Button asChild variant="ghost" size="icon">
+                                                                        <Link href={`${formUrl}?id=${record.id}`}>
+                                                                            <Edit className="h-4 w-4" />
+                                                                        </Link>
+                                                                    </Button>
+                                                                )}
+                                                                <Button variant="ghost" size="icon" onClick={(e) => openDeleteDialog(e, record)}>
+                                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
+                                                    No records found for this category.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
                 ) : (
