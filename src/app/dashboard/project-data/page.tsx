@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -56,7 +55,7 @@ export default function ProjectDataPage() {
         tel_company: '', tel_rep: '', tel_tel: '', sewers: '', water: '',
         loan_amount: '', loan_type: '', loan_rate: '', loan_by: '', loan_rep: '',
         loan_tel: '', bonds_liens: '', grant_amount: '', grant_limitations: '',
-        grant_from: '', grant_rep: '', grant_tel: '', contract_type: '', negotiated: '',
+        grant_from: '', grant_rep: '', grant_tel: '', contract_type: 'single', negotiated: '',
         bid: '', stipulated_sum: '', cost_plus_fee: '', force_amount: '',
         equipment_fixed: '', equipment_movable: '', equipment_interiors: '',
         landscaping: '', sketch_notes: ''
@@ -90,7 +89,7 @@ export default function ProjectDataPage() {
                 body: data,
                 theme: 'grid',
                 headStyles: { fillColor: [45, 95, 51] },
-                columnStyles: { 0: { fontStyle: 'bold', cellWidth: '40%' }, 1: { cellWidth: 'auto' } },
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 80 } },
                 margin: { left: margin, right: margin }
             });
             yPos = doc.autoTable.previous.finalY + 10;
@@ -125,8 +124,7 @@ export default function ProjectDataPage() {
             ['Other Agency Approvals:', formData.agency_approvals]
         ]);
         
-        doc.addPage();
-        yPos = 20;
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
 
         addSection("Site Legal Description", [
             ['Description:', formData.site_legal_description],
@@ -142,6 +140,8 @@ export default function ProjectDataPage() {
             ['Adjacent property use:', formData.adjacent_property_use]
         ]);
 
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+
         addSection("Contacts", [
             ['Owners: Name:', formData.owner_name_contact],
             ['Designated Representative:', formData.rep_name_contact],
@@ -152,8 +152,7 @@ export default function ProjectDataPage() {
             ['Consultant on:', formData.consultant_on]
         ]);
 
-        doc.addPage();
-        yPos = 20;
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
 
         addSection("Site Information Sources", [
             ['Property Survey by:', formData.survey_property],
@@ -166,6 +165,8 @@ export default function ProjectDataPage() {
             ['Date:', formData.aerial_date],
             ['Maps:', formData.maps_source]
         ]);
+        
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
 
         addSection("Public Services", [
             ['Gas Company:', formData.gas_company],
@@ -181,8 +182,7 @@ export default function ProjectDataPage() {
             ['Water:', formData.water]
         ]);
         
-        doc.addPage();
-        yPos = 20;
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
         
         addSection("Financial Data", [
             ['Loan:', `Amount: ${formData.loan_amount}, Type: ${formData.loan_type}, Rate: ${formData.loan_rate}`],
@@ -195,6 +195,8 @@ export default function ProjectDataPage() {
             ['Representative:', formData.grant_rep],
             ['Tel:', formData.grant_tel]
         ]);
+
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
 
         addSection("Method of Handling", [
             ['Contract Type:', formData.contract_type],
@@ -231,21 +233,21 @@ export default function ProjectDataPage() {
                 <CardContent className="p-6 md:p-8">
                     <form id="project-data-form">
                         <Section>
-                           <InputRow label="Project:" id="project_name" value={formData.project_name} onChange={handleChange}/>
-                           <InputRow label="Address:" id="project_address" value={formData.project_address} onChange={handleChange}/>
-                           <InputRow label="Owner:" id="project_owner" value={formData.project_owner} onChange={handleChange}/>
-                           <InputRow label="Architect's Project No." id="architect_project_no" value={formData.architect_project_no} onChange={handleChange}/>
-                           <InputRow label="Date:" id="project_date" type="date" value={formData.project_date} onChange={handleChange}/>
-                           <InputRow label="Tel:" id="project_tel" value={formData.project_tel} onChange={handleChange}/>
-                           <InputRow label="Business Address:" id="business_address" value={formData.business_address} onChange={handleChange}/>
-                           <InputRow label="Home Address:" id="home_address" value={formData.home_address} onChange={handleChange}/>
-                           <InputRow label="Tel (Business):" id="business_tel" value={formData.business_tel} onChange={handleChange}/>
-                           <InputRow label="Tel (Home):" id="home_tel" value={formData.home_tel} onChange={handleChange}/>
+                           <InputRow label="Project:" id="project_name" name="project_name" value={formData.project_name} onChange={handleChange}/>
+                           <InputRow label="Address:" id="project_address" name="project_address" value={formData.project_address} onChange={handleChange}/>
+                           <InputRow label="Owner:" id="project_owner" name="project_owner" value={formData.project_owner} onChange={handleChange}/>
+                           <InputRow label="Architect's Project No." id="architect_project_no" name="architect_project_no" value={formData.architect_project_no} onChange={handleChange}/>
+                           <InputRow label="Date:" id="project_date" name="project_date" type="date" value={formData.project_date} onChange={handleChange}/>
+                           <InputRow label="Tel:" id="project_tel" name="project_tel" value={formData.project_tel} onChange={handleChange}/>
+                           <InputRow label="Business Address:" id="business_address" name="business_address" value={formData.business_address} onChange={handleChange}/>
+                           <InputRow label="Home Address:" id="home_address" name="home_address" value={formData.home_address} onChange={handleChange}/>
+                           <InputRow label="Tel (Business):" id="business_tel" name="business_tel" value={formData.business_tel} onChange={handleChange}/>
+                           <InputRow label="Tel (Home):" id="home_tel" name="home_tel" value={formData.home_tel} onChange={handleChange}/>
                         </Section>
 
                         <Section>
-                            <InputRow label="Proposed Improvements:" id="proposed_improvements" value={formData.proposed_improvements} onChange={handleChange} />
-                            <InputRow label="Building Dept. Classification:" id="building_classification" value={formData.building_classification} onChange={handleChange}/>
+                            <InputRow label="Proposed Improvements:" id="proposed_improvements" name="proposed_improvements" value={formData.proposed_improvements} onChange={handleChange} />
+                            <InputRow label="Building Dept. Classification:" id="building_classification" name="building_classification" value={formData.building_classification} onChange={handleChange}/>
                             <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Set Backs:</Label>
                                 <div className="flex-1 grid grid-cols-5 gap-2">
@@ -256,9 +258,9 @@ export default function ProjectDataPage() {
                                     <Input name="setback_coverage" placeholder="Coverage" value={formData.setback_coverage} onChange={handleChange}/>
                                 </div>
                             </div>
-                            <InputRow label="Cost:" id="project_cost" value={formData.project_cost} onChange={handleChange}/>
-                            <InputRow label="Stories:" id="project_stories" value={formData.project_stories} onChange={handleChange}/>
-                            <InputRow label="Fire Zone:" id="fire_zone" value={formData.fire_zone} onChange={handleChange}/>
+                            <InputRow label="Cost:" id="project_cost" name="project_cost" value={formData.project_cost} onChange={handleChange}/>
+                            <InputRow label="Stories:" id="project_stories" name="project_stories" value={formData.project_stories} onChange={handleChange}/>
+                            <InputRow label="Fire Zone:" id="fire_zone" name="fire_zone" value={formData.fire_zone} onChange={handleChange}/>
                              <div className="flex flex-col gap-2">
                                 <Label htmlFor="agency_approvals">Other Agency Standards or Approvals Required:</Label>
                                 <Textarea id="agency_approvals" name="agency_approvals" value={formData.agency_approvals} onChange={handleChange}/>
@@ -267,14 +269,14 @@ export default function ProjectDataPage() {
                         
                         <Section title="Site Legal Description">
                              <Textarea id="site_legal_description" name="site_legal_description" value={formData.site_legal_description} onChange={handleChange}/>
-                             <InputRow label="Deed recorded in Vol." id="deed_vol" value={formData.deed_vol} onChange={handleChange}/>
-                             <InputRow label="Page" id="deed_page" value={formData.deed_page} onChange={handleChange}/>
-                             <InputRow label="at" id="deed_at" value={formData.deed_at} onChange={handleChange}/>
-                             <InputRow label="to" id="deed_to" value={formData.deed_to} onChange={handleChange}/>
-                             <InputRow label="Date:" id="deed_date" type="date" value={formData.deed_date} onChange={handleChange}/>
-                             <InputRow label="Restrictions:" id="restrictions" value={formData.restrictions} onChange={handleChange}/>
-                             <InputRow label="Easements:" id="easements" value={formData.easements} onChange={handleChange}/>
-                             <InputRow label="Liens, Leases:" id="liens_leases" value={formData.liens_leases} onChange={handleChange}/>
+                             <InputRow label="Deed recorded in Vol." id="deed_vol" name="deed_vol" value={formData.deed_vol} onChange={handleChange}/>
+                             <InputRow label="Page" id="deed_page" name="deed_page" value={formData.deed_page} onChange={handleChange}/>
+                             <InputRow label="at" id="deed_at" name="deed_at" value={formData.deed_at} onChange={handleChange}/>
+                             <InputRow label="to" id="deed_to" name="deed_to" value={formData.deed_to} onChange={handleChange}/>
+                             <InputRow label="Date:" id="deed_date" name="deed_date" type="date" value={formData.deed_date} onChange={handleChange}/>
+                             <InputRow label="Restrictions:" id="restrictions" name="restrictions" value={formData.restrictions} onChange={handleChange}/>
+                             <InputRow label="Easements:" id="easements" name="easements" value={formData.easements} onChange={handleChange}/>
+                             <InputRow label="Liens, Leases:" id="liens_leases" name="liens_leases" value={formData.liens_leases} onChange={handleChange}/>
                              <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Lot Dimensions:</Label>
                                 <div className="flex-1 grid grid-cols-3 gap-2">
@@ -283,43 +285,43 @@ export default function ProjectDataPage() {
                                     <Input name="lot_value" placeholder="Value" value={formData.lot_value} onChange={handleChange}/>
                                 </div>
                             </div>
-                            <InputRow label="Adjacent property use:" id="adjacent_property_use" value={formData.adjacent_property_use} onChange={handleChange}/>
+                            <InputRow label="Adjacent property use:" id="adjacent_property_use" name="adjacent_property_use" value={formData.adjacent_property_use} onChange={handleChange}/>
                         </Section>
 
                          <Section title="Contacts">
-                            <InputRow label="Owners: Name:" id="owner_name_contact" value={formData.owner_name_contact} onChange={handleChange}/>
-                            <InputRow label="Designated Representative:" id="rep_name_contact" value={formData.rep_name_contact} onChange={handleChange}/>
-                            <InputRow label="Address:" id="contact_address" value={formData.contact_address} onChange={handleChange}/>
-                            <InputRow label="Tel:" id="contact_tel" value={formData.contact_tel} onChange={handleChange}/>
-                            <InputRow label="Attorney at Law:" id="attorney" value={formData.attorney} onChange={handleChange}/>
-                            <InputRow label="Insurance Advisor:" id="insurance_advisor" value={formData.insurance_advisor} onChange={handleChange}/>
-                            <InputRow label="Consultant on:" id="consultant_on" value={formData.consultant_on} onChange={handleChange}/>
+                            <InputRow label="Owners: Name:" id="owner_name_contact" name="owner_name_contact" value={formData.owner_name_contact} onChange={handleChange}/>
+                            <InputRow label="Designated Representative:" id="rep_name_contact" name="rep_name_contact" value={formData.rep_name_contact} onChange={handleChange}/>
+                            <InputRow label="Address:" id="contact_address" name="contact_address" value={formData.contact_address} onChange={handleChange}/>
+                            <InputRow label="Tel:" id="contact_tel" name="contact_tel" value={formData.contact_tel} onChange={handleChange}/>
+                            <InputRow label="Attorney at Law:" id="attorney" name="attorney" value={formData.attorney} onChange={handleChange}/>
+                            <InputRow label="Insurance Advisor:" id="insurance_advisor" name="insurance_advisor" value={formData.insurance_advisor} onChange={handleChange}/>
+                            <InputRow label="Consultant on:" id="consultant_on" name="consultant_on" value={formData.consultant_on} onChange={handleChange}/>
                         </Section>
 
                         <Section title="Site Information Sources">
-                            <InputRow label="Property Survey by:" id="survey_property" value={formData.survey_property} onChange={handleChange}/>
-                            <InputRow label="Date:" id="survey_property_date" type="date" value={formData.survey_property_date} onChange={handleChange}/>
-                            <InputRow label="Topographic Survey by:" id="survey_topo" value={formData.survey_topo} onChange={handleChange}/>
-                             <InputRow label="Date:" id="survey_topo_date" type="date" value={formData.survey_topo_date} onChange={handleChange}/>
-                            <InputRow label="Soils Tests by:" id="soils_tests" value={formData.soils_tests} onChange={handleChange}/>
-                             <InputRow label="Date:" id="soils_date" type="date" value={formData.soils_date} onChange={handleChange}/>
-                            <InputRow label="Aerial Photos by:" id="aerial_photos" value={formData.aerial_photos} onChange={handleChange}/>
-                             <InputRow label="Date:" id="aerial_date" type="date" value={formData.aerial_date} onChange={handleChange}/>
-                            <InputRow label="Maps:" id="maps_source" value={formData.maps_source} onChange={handleChange}/>
+                            <InputRow label="Property Survey by:" id="survey_property" name="survey_property" value={formData.survey_property} onChange={handleChange}/>
+                            <InputRow label="Date:" id="survey_property_date" name="survey_property_date" type="date" value={formData.survey_property_date} onChange={handleChange}/>
+                            <InputRow label="Topographic Survey by:" id="survey_topo" name="survey_topo" value={formData.survey_topo} onChange={handleChange}/>
+                             <InputRow label="Date:" id="survey_topo_date" name="survey_topo_date" type="date" value={formData.survey_topo_date} onChange={handleChange}/>
+                            <InputRow label="Soils Tests by:" id="soils_tests" name="soils_tests" value={formData.soils_tests} onChange={handleChange}/>
+                             <InputRow label="Date:" id="soils_date" name="soils_date" type="date" value={formData.soils_date} onChange={handleChange}/>
+                            <InputRow label="Aerial Photos by:" id="aerial_photos" name="aerial_photos" value={formData.aerial_photos} onChange={handleChange}/>
+                             <InputRow label="Date:" id="aerial_date" name="aerial_date" type="date" value={formData.aerial_date} onChange={handleChange}/>
+                            <InputRow label="Maps:" id="maps_source" name="maps_source" value={formData.maps_source} onChange={handleChange}/>
                         </Section>
 
                         <Section title="Public Services">
-                            <InputRow label="Gas Company (Name, Address):" id="gas_company" value={formData.gas_company} onChange={handleChange}/>
-                             <InputRow label="Representative:" id="gas_rep" value={formData.gas_rep} onChange={handleChange}/>
-                             <InputRow label="Tel:" id="gas_tel" value={formData.gas_tel} onChange={handleChange}/>
-                            <InputRow label="Electric Co (Name, Address):" id="electric_company" value={formData.electric_company} onChange={handleChange}/>
-                             <InputRow label="Representative:" id="electric_rep" value={formData.electric_rep} onChange={handleChange}/>
-                             <InputRow label="Tel:" id="electric_tel" value={formData.electric_tel} onChange={handleChange}/>
-                            <InputRow label="Telephone Co (Name, Address):" id="tel_company" value={formData.tel_company} onChange={handleChange}/>
-                             <InputRow label="Representative:" id="tel_rep" value={formData.tel_rep} onChange={handleChange}/>
-                             <InputRow label="Tel:" id="tel_tel" value={formData.tel_tel} onChange={handleChange}/>
-                            <InputRow label="Sewers:" id="sewers" value={formData.sewers} onChange={handleChange}/>
-                            <InputRow label="Water:" id="water" value={formData.water} onChange={handleChange}/>
+                            <InputRow label="Gas Company (Name, Address):" id="gas_company" name="gas_company" value={formData.gas_company} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="gas_rep" name="gas_rep" value={formData.gas_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="gas_tel" name="gas_tel" value={formData.gas_tel} onChange={handleChange}/>
+                            <InputRow label="Electric Co (Name, Address):" id="electric_company" name="electric_company" value={formData.electric_company} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="electric_rep" name="electric_rep" value={formData.electric_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="electric_tel" name="electric_tel" value={formData.electric_tel} onChange={handleChange}/>
+                            <InputRow label="Telephone Co (Name, Address):" id="tel_company" name="tel_company" value={formData.tel_company} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="tel_rep" name="tel_rep" value={formData.tel_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="tel_tel" name="tel_tel" value={formData.tel_tel} onChange={handleChange}/>
+                            <InputRow label="Sewers:" id="sewers" name="sewers" value={formData.sewers} onChange={handleChange}/>
+                            <InputRow label="Water:" id="water" name="water" value={formData.water} onChange={handleChange}/>
                         </Section>
 
                         <Section title="Financial Data">
@@ -331,10 +333,10 @@ export default function ProjectDataPage() {
                                     <Input name="loan_rate" placeholder="Rate" value={formData.loan_rate} onChange={handleChange}/>
                                 </div>
                             </div>
-                             <InputRow label="Loan by:" id="loan_by" value={formData.loan_by} onChange={handleChange}/>
-                             <InputRow label="Representative:" id="loan_rep" value={formData.loan_rep} onChange={handleChange}/>
-                             <InputRow label="Tel:" id="loan_tel" value={formData.loan_tel} onChange={handleChange}/>
-                            <InputRow label="Bonds or Liens:" id="bonds_liens" value={formData.bonds_liens} onChange={handleChange}/>
+                             <InputRow label="Loan by:" id="loan_by" name="loan_by" value={formData.loan_by} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="loan_rep" name="loan_rep" value={formData.loan_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="loan_tel" name="loan_tel" value={formData.loan_tel} onChange={handleChange}/>
+                            <InputRow label="Bonds or Liens:" id="bonds_liens" name="bonds_liens" value={formData.bonds_liens} onChange={handleChange}/>
                             <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Grant:</Label>
                                 <div className="flex-1 grid grid-cols-2 gap-2">
@@ -342,9 +344,9 @@ export default function ProjectDataPage() {
                                     <Input name="grant_limitations" placeholder="Limitations" value={formData.grant_limitations} onChange={handleChange}/>
                                 </div>
                             </div>
-                             <InputRow label="Grant from:" id="grant_from" value={formData.grant_from} onChange={handleChange}/>
-                             <InputRow label="Representative:" id="grant_rep" value={formData.grant_rep} onChange={handleChange}/>
-                             <InputRow label="Tel:" id="grant_tel" value={formData.grant_tel} onChange={handleChange}/>
+                             <InputRow label="Grant from:" id="grant_from" name="grant_from" value={formData.grant_from} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="grant_rep" name="grant_rep" value={formData.grant_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="grant_tel" name="grant_tel" value={formData.grant_tel} onChange={handleChange}/>
                         </Section>
                         
                         <Section title="Method of Handling">
@@ -355,11 +357,11 @@ export default function ProjectDataPage() {
                                     <div className="flex items-center gap-2"><input type="radio" id="separate_contract" name="contract_type" value="separate" checked={formData.contract_type === 'separate'} onChange={handleChange} /><Label htmlFor="separate_contract">Separate</Label></div>
                                 </div>
                             </div>
-                            <InputRow label="Negotiated:" id="negotiated" value={formData.negotiated} onChange={handleChange}/>
-                            <InputRow label="Bid:" id="bid" value={formData.bid} onChange={handleChange}/>
-                            <InputRow label="Stipulated Sum:" id="stipulated_sum" value={formData.stipulated_sum} onChange={handleChange}/>
-                            <InputRow label="Cost Plus Fee:" id="cost_plus_fee" value={formData.cost_plus_fee} onChange={handleChange}/>
-                            <InputRow label="Force Amount:" id="force_amount" value={formData.force_amount} onChange={handleChange}/>
+                            <InputRow label="Negotiated:" id="negotiated" name="negotiated" value={formData.negotiated} onChange={handleChange}/>
+                            <InputRow label="Bid:" id="bid" name="bid" value={formData.bid} onChange={handleChange}/>
+                            <InputRow label="Stipulated Sum:" id="stipulated_sum" name="stipulated_sum" value={formData.stipulated_sum} onChange={handleChange}/>
+                            <InputRow label="Cost Plus Fee:" id="cost_plus_fee" name="cost_plus_fee" value={formData.cost_plus_fee} onChange={handleChange}/>
+                            <InputRow label="Force Amount:" id="force_amount" name="force_amount" value={formData.force_amount} onChange={handleChange}/>
                             <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Equipment:</Label>
                                 <div className="flex-1 grid grid-cols-3 gap-2">
@@ -368,7 +370,7 @@ export default function ProjectDataPage() {
                                     <Input name="equipment_interiors" placeholder="Interiors" value={formData.equipment_interiors} onChange={handleChange}/>
                                 </div>
                             </div>
-                            <InputRow label="Landscaping:" id="landscaping" value={formData.landscaping} onChange={handleChange}/>
+                            <InputRow label="Landscaping:" id="landscaping" name="landscaping" value={formData.landscaping} onChange={handleChange}/>
                         </Section>
 
                         <Section title="Sketch of Property">
