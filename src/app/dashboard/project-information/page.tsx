@@ -209,217 +209,10 @@ export default function ProjectInformationPage() {
     };
 
     const handleDownloadPdf = () => {
-        const doc = new jsPDF() as jsPDFWithAutoTable;
-        let yPos = 20;
-        const margin = 14;
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const primaryColor = [45, 95, 51];
-        const headingFillColor = [240, 240, 240];
-
-        const addSectionTitle = (title: string) => {
-            if (yPos > 260) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setFillColor.apply(doc, headingFillColor);
-            doc.rect(margin, yPos, pageWidth - (margin * 2), 8, 'F');
-            doc.text(title, margin + 2, yPos + 6);
-            yPos += 12;
-        };
-
-        const addField = (label: string, value: string) => {
-            if (yPos > 275) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.text(label, margin, yPos);
-            doc.setFont('helvetica', 'normal');
-            doc.text(value, margin + 70, yPos);
-            yPos += 7;
-        };
-
-        const addMultiLineField = (label: string, value: string) => {
-            if (yPos > 260) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.text(label, margin, yPos);
-            yPos += 5;
-            doc.setFont('helvetica', 'normal');
-            const splitValue = doc.splitTextToSize(value, pageWidth - (margin * 2) - 5);
-            doc.text(splitValue, margin + 5, yPos);
-            yPos += (splitValue.length * 4) + 5;
-        };
-
-        const addCheckboxGroup = (label: string, options: {key: keyof typeof formState, label: string}[], otherKey?: keyof typeof formState, otherTextKey?: keyof typeof formState) => {
-            if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.text(label, margin, yPos);
-            yPos += 7;
-            doc.setFont('helvetica', 'normal');
-            options.forEach(opt => {
-                doc.text(`[${formState[opt.key] ? 'X' : ' '}] ${opt.label}`, margin + 5, yPos);
-                yPos += 6;
-            });
-            if (otherKey && otherTextKey) {
-                 doc.text(`[${formState[otherKey] ? 'X' : ' '}] ${formState[otherTextKey] || 'Other'}`, margin + 5, yPos);
-                 yPos += 6;
-            }
-        };
-        
-        const addRadioGroup = (label: string, name: keyof typeof formState, options: {value: string, label: string}[]) => {
-             if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.text(label, margin, yPos);
-            yPos += 7;
-            doc.setFont('helvetica', 'normal');
-            options.forEach(opt => {
-                doc.text(`(${formState[name] === opt.value ? '•' : 'o'}) ${opt.label}`, margin + 5, yPos);
-                yPos += 6;
-            });
-        }
-        
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text('PROJECT INFORMATION', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 15;
-        doc.setTextColor(0, 0, 0);
-
-        addField('Project:', formState.project);
-        addField('Address:', formState.address);
-        addField('Project No:', formState.projectNo);
-        addField('Prepared By:', formState.preparedBy);
-        addField('Prepared Date:', formState.preparedDate);
-        yPos += 5;
-
-        addSectionTitle('About Owner');
-        addField('Full Name:', formState.ownerFullName);
-        addField('Address (Office):', formState.ownerOfficeAddress);
-        addField('Address (Res.):', formState.ownerResAddress);
-        addField('Phone (Office):', formState.ownerOfficePhone);
-        addField('Phone (Res.):', formState.ownerResPhone);
-        yPos += 5;
-        
-        addSectionTitle("Owner's Project Representative");
-        addField('Name:', formState.repName);
-        addField('Address (Office):', formState.repOfficeAddress);
-        addField('Address (Res.):', formState.repResAddress);
-        addField('Phone (Office):', formState.repOfficePhone);
-        addField('Phone (Res.):', formState.repResPhone);
-        yPos += 5;
-        
-        addSectionTitle("About Project");
-        addField('Address:', formState.projectAboutAddress);
-        addCheckboxGroup('Project Reqt.', [
-            { key: 'reqArchitectural', label: 'i. Architectural Designing' },
-            { key: 'reqInterior', label: 'ii. Interior Decoration' },
-            { key: 'reqLandscaping', label: 'iii. Landscaping' },
-            { key: 'reqTurnkey', label: 'iv. Turnkey' },
-        ], 'reqOther', 'reqOtherText');
-        yPos += 5;
-        
-        addSectionTitle("Project Details");
-        addRadioGroup('Project Type:', 'projectType', [{value: 'commercial', label: 'Commercial'}, {value: 'residential', label: 'Residential'}]);
-        addRadioGroup('Project Status:', 'projectStatus', [{value: 'new', label: 'New'}, {value: 'addition', label: 'Addition'}, {value: 'renovation', label: 'Rehabilitation/Renovation'}]);
-        addField('Project Area:', formState.projectArea);
-        addMultiLineField('Special Requirements of Project:', formState.specialRequirements);
-        yPos += 5;
-        
-        addSectionTitle("Project's Cost");
-        addField('i. Architectural Designing:', formState.costArchitectural);
-        addField('ii. Interior Decoration:', formState.costInterior);
-        addField('iii. Landscaping:', formState.costLandscaping);
-        addField('iv. Construction:', formState.costConstruction);
-        addField('v. Turnkey:', formState.costTurnkey);
-        addField('vi. Other:', formState.costOther);
-        yPos += 5;
-        
-        doc.addPage();
-        yPos = 20;
-
-        addSectionTitle("Dates Concerned with Project");
-        addField('First Information about Project:', formState.dateFirstInfo);
-        addField('First Meeting:', formState.dateFirstMeeting);
-        addField('First Working on Project:', formState.dateFirstWorking);
-        addField('First Proposal:', `Start: ${formState.dateFirstProposalStart}, End: ${formState.dateFirstProposalEnd}`);
-        addField('Second Proposal:', `Start: ${formState.dateSecondProposalStart}, End: ${formState.dateSecondProposalEnd}`);
-        addField('First Information:', formState.dateFirstInfo2);
-        addField('Working on Finalized Proposal:', formState.dateWorkingFinalized);
-        addField('Revised Presentation:', formState.dateRevisedPresentation);
-        addField('Quotation:', formState.dateQuotation);
-        addField('Drawings:', `Start: ${formState.dateDrawingsStart}, End: ${formState.dateDrawingsEnd}`);
-        addField('Other Major Projects Milestone Dates:', formState.dateOtherMilestones);
-        yPos += 5;
-
-        addSectionTitle("Provided by Owner");
-        addMultiLineField('Program:', formState.ownerProgram);
-        addMultiLineField('Suggested Schedule:', formState.ownerSchedule);
-        addMultiLineField('Legal Site Description & Other Concerned Documents:', formState.ownerLegal);
-        addMultiLineField('Land Survey Report:', formState.ownerLandSurvey);
-        addMultiLineField('Geo-Technical, Tests and Other Site Information:', formState.ownerGeoTech);
-        addMultiLineField("Existing Structure's Drawings:", formState.ownerExistingDrawings);
-        yPos += 5;
-
-        addSectionTitle("Compensation");
-        addField('Initial Payment:', formState.compInitialPayment);
-        addField('Basic Services (% of Cost of Construction):', formState.compBasicServices);
-        addField('Breakdown by Phase:', '');
-        addField('  Schematic Design (%):', formState.compSchematic);
-        addField('  Design Development (%):', formState.compDesignDev);
-        addField('  Construction Doc\'s (%):', formState.compConstructionDocs);
-        addField('  Bidding / Negotiation (%):', formState.compBidding);
-        addField('  Construction Contract Admin (%):', formState.compConstructionAdmin);
-        addField('Additional Services (Multiple of):', formState.compAdditionalServices);
-        addField('Reimbursable Expenses:', formState.compReimbursable);
-        addField('Other:', formState.compOther);
-        yPos+=5;
-
-        doc.addPage();
-        yPos = 20;
-        
-        addSectionTitle('Consultants');
-        doc.autoTable({
-            head: [['Consultants', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
-            body: consultantTypes.map(type => [
-                type,
-                consultants[type]?.withinFee || '',
-                consultants[type]?.additionalFee || '',
-                consultants[type]?.architect || '',
-                consultants[type]?.owner || '',
-            ]),
-            startY: yPos, theme: 'grid',
-            headStyles: { fillColor: headingFillColor, textColor: 0, fontStyle: 'bold' },
-        });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
-        
-        addSectionTitle('Requirements for Residence');
-        doc.autoTable({
-            head: [['Description', 'Nos.', 'Remarks']],
-            body: residenceRequirements.map(req => [
-                req,
-                requirements[req]?.nos || '',
-                requirements[req]?.remarks || ''
-            ]),
-            startY: yPos, theme: 'grid',
-            headStyles: { fillColor: headingFillColor, textColor: 0, fontStyle: 'bold' },
-        });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
-
-        addSectionTitle("Special Confidential Requirements");
-        addMultiLineField('', formState.specialConfidential);
-
-        addSectionTitle("Miscellaneous Notes");
-        addMultiLineField('', formState.miscNotes);
-
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i);
-          doc.setFontSize(8);
-          doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
-        }
-        
-        doc.save('project-information.pdf');
-        toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
+        toast({ title: 'Preparing PDF', description: 'Your PDF is being generated. Please use the browser\'s print dialog to "Save as PDF".' });
+        setTimeout(() => {
+            window.print();
+        }, 500);
     };
 
     return (
@@ -430,7 +223,7 @@ export default function ProjectInformationPage() {
                 imageUrl={image?.imageUrl || ''}
                 imageHint={image?.imageHint || ''}
             />
-            <Card>
+            <Card className="printable-area">
                 <CardHeader>
                     <CardTitle className="text-center font-headline text-3xl text-primary">PROJECT INFORMATION</CardTitle>
                 </CardHeader>
@@ -628,7 +421,7 @@ export default function ProjectInformationPage() {
                           <Textarea name="miscNotes" value={formState.miscNotes} onChange={handleChange} rows={4} />
                         </Section>
 
-                        <div className="flex justify-end gap-4 mt-12">
+                        <div className="flex justify-end gap-4 mt-12 no-print">
                             <Button type="button" onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
                             <Button type="button" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
@@ -638,5 +431,3 @@ export default function ProjectInformationPage() {
         </div>
     );
 }
-
-    
