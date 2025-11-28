@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,20 +76,27 @@ export default function Page() {
     };
 
     useEffect(() => {
-        const C = parseFloat(formState.originalContractSum) + parseFloat(formState.netChangeOrders);
-        const F = parseFloat(formState.workInPlace) + parseFloat(formState.storedMaterials);
-        const H = F * (parseFloat(formState.retainagePercentage) / 100);
-        const J = F - H - parseFloat(formState.previousPayments);
+        const originalSum = parseFloat(formState.originalContractSum) || 0;
+        const netChanges = parseFloat(formState.netChangeOrders) || 0;
+        const workInPlace = parseFloat(formState.workInPlace) || 0;
+        const storedMaterials = parseFloat(formState.storedMaterials) || 0;
+        const retainagePercent = parseFloat(formState.retainagePercentage) || 0;
+        const prevPayments = parseFloat(formState.previousPayments) || 0;
+
+        const C = originalSum + netChanges;
+        const F = workInPlace + storedMaterials;
+        const H = F * (retainagePercent / 100);
+        const J = F - H - prevPayments;
         const K = C - F;
-        const L = (F / C) * 100;
+        const L = C > 0 ? (F / C) * 100 : 0;
 
         setCalculated({
-            contractSumToDate: isNaN(C) ? '' : C.toFixed(2),
-            totalCompletedAndStored: isNaN(F) ? '' : F.toFixed(2),
-            retainageAmount: isNaN(H) ? '' : H.toFixed(2),
-            currentPaymentDue: isNaN(J) ? '' : J.toFixed(2),
-            balanceToFinish: isNaN(K) ? '' : K.toFixed(2),
-            percentComplete: isNaN(L) ? '' : L.toFixed(2),
+            contractSumToDate: C.toFixed(2),
+            totalCompletedAndStored: F.toFixed(2),
+            retainageAmount: H.toFixed(2),
+            currentPaymentDue: J.toFixed(2),
+            balanceToFinish: K.toFixed(2),
+            percentComplete: L.toFixed(2),
         });
 
     }, [formState]);
