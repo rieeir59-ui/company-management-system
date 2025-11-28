@@ -110,4 +110,40 @@ body {
   .card, .table, .input, .textarea, .label, .button, .checkbox, .radio-group, .select-trigger {
     border-color: #ddd !important;
   }
+  
+  .project-data-page .input,
+  .project-data-page .textarea {
+      border: none !important;
+      background-color: transparent !important;
+      padding-left: 0;
+      padding-right: 0;
+      box-shadow: none !important;
+      -webkit-print-color-adjust: exact; 
+      color-adjust: exact;
+  }
+  
+  .project-data-page input::placeholder,
+  .project-data-page textarea::placeholder {
+      color: transparent !important;
+  }
+
+  .project-data-page .section-title {
+    background-color: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact; 
+    color-adjust: exact;
+    color: black !important;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .project-data-page .flex, .project-data-page .grid {
+    break-inside: avoid;
+  }
+
+  .project-data-page section {
+    page-break-inside: avoid;
+  }
+
+  .project-data-page .card-content {
+    padding: 0 !important;
+  }
 }

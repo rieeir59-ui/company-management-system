@@ -8,28 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download } from 'lucide-react';
+import { Save, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-
-interface jsPDFWithAutoTable extends jsPDF {
-    autoTable: (options: any) => jsPDF;
-}
 
 const Section = ({ title, children }: { title?: string; children: React.ReactNode }) => (
-  <div className="mb-6">
-    {title && <h2 className="text-lg font-bold text-primary mb-3 pb-1 border-b border-primary">{title}</h2>}
+  <section className="mb-6">
+    {title && <h2 className="text-lg font-bold text-primary mb-3 pb-1 border-b border-primary section-title">{title}</h2>}
     <div className="space-y-4">
       {children}
     </div>
-  </div>
+  </section>
 );
 
-const InputRow = ({ label, id, name, value, onChange, placeholder = '', type = 'text' }: { label: string, id: string, name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder?: string, type?: string }) => (
-    <div className="flex items-center gap-4">
-        <Label htmlFor={id} className="w-48 text-right">{label}</Label>
-        <Input id={id} name={name} value={value} onChange={onChange} placeholder={placeholder} type={type} className="flex-1" />
+const InputRow = ({ label, id, name, value, onChange, placeholder = '', type = 'text' }: { label: string, id: string, name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, placeholder?: string, type?: string }) => (
+    <div className="flex items-start gap-4 py-1">
+        <Label htmlFor={id} className="w-48 text-right shrink-0 pt-2">{label}</Label>
+        {type === 'textarea' ? (
+          <Textarea id={id} name={name} value={value} onChange={onChange} placeholder={placeholder} className="flex-1" rows={3}/>
+        ) : (
+          <Input id={id} name={name} value={value} onChange={onChange} placeholder={placeholder} type={type} className="flex-1" />
+        )}
     </div>
 );
 
@@ -73,161 +71,23 @@ export default function ProjectDataPage() {
     }
 
     const handleDownloadPdf = () => {
-        const doc = new jsPDF() as jsPDFWithAutoTable;
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 14;
-        let yPos = 22;
-
-        const addSection = (title: string, data: [string, string][]) => {
-             if (yPos > 250) {
-                doc.addPage();
-                yPos = 20;
-            }
-            doc.autoTable({
-                startY: yPos,
-                head: [[title]],
-                body: data,
-                theme: 'grid',
-                headStyles: { fillColor: [45, 95, 51] },
-                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 80 } },
-                margin: { left: margin, right: margin }
-            });
-            yPos = doc.autoTable.previous.finalY + 10;
-        }
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.setTextColor(45, 95, 51);
-        doc.text('PROJECT DATA', pageWidth / 2, 15, { align: 'center' });
-        doc.setTextColor(0, 0, 0);
-
-        addSection("Project Information", [
-            ['Project:', formData.project_name],
-            ['Address:', formData.project_address],
-            ['Owner:', formData.project_owner],
-            ["Architect's Project No.:", formData.architect_project_no],
-            ['Date:', formData.project_date],
-            ['Tel:', formData.project_tel],
-            ['Business Address:', formData.business_address],
-            ['Home Address:', formData.home_address],
-            ['Tel (Business):', formData.business_tel],
-            ['Tel (Home):', formData.home_tel]
-        ]);
-
-        addSection("Project Details", [
-            ['Proposed Improvements:', formData.proposed_improvements],
-            ['Building Dept. Classification:', formData.building_classification],
-            ['Set Backs:', `N: ${formData.setback_n}, E: ${formData.setback_e}, S: ${formData.setback_s}, W: ${formData.setback_w}, Coverage: ${formData.setback_coverage}`],
-            ['Cost:', formData.project_cost],
-            ['Stories:', formData.project_stories],
-            ['Fire Zone:', formData.fire_zone],
-            ['Other Agency Approvals:', formData.agency_approvals]
-        ]);
-        
-        if (yPos > 250) { doc.addPage(); yPos = 20; }
-
-        addSection("Site Legal Description", [
-            ['Description:', formData.site_legal_description],
-            ['Deed recorded in Vol.:', formData.deed_vol],
-            ['Page:', formData.deed_page],
-            ['at:', formData.deed_at],
-            ['to:', formData.deed_to],
-            ['Date:', formData.deed_date],
-            ['Restrictions:', formData.restrictions],
-            ['Easements:', formData.easements],
-            ['Liens, Leases:', formData.liens_leases],
-            ['Lot Dimensions:', `Dimensions: ${formData.lot_dimensions}, Facing: ${formData.lot_facing}, Value: ${formData.lot_value}`],
-            ['Adjacent property use:', formData.adjacent_property_use]
-        ]);
-
-        if (yPos > 250) { doc.addPage(); yPos = 20; }
-
-        addSection("Contacts", [
-            ['Owners: Name:', formData.owner_name_contact],
-            ['Designated Representative:', formData.rep_name_contact],
-            ['Address:', formData.contact_address],
-            ['Tel:', formData.contact_tel],
-            ['Attorney at Law:', formData.attorney],
-            ['Insurance Advisor:', formData.insurance_advisor],
-            ['Consultant on:', formData.consultant_on]
-        ]);
-
-        if (yPos > 250) { doc.addPage(); yPos = 20; }
-
-        addSection("Site Information Sources", [
-            ['Property Survey by:', formData.survey_property],
-            ['Date:', formData.survey_property_date],
-            ['Topographic Survey by:', formData.survey_topo],
-            ['Date:', formData.survey_topo_date],
-            ['Soils Tests by:', formData.soils_tests],
-            ['Date:', formData.soils_date],
-            ['Aerial Photos by:', formData.aerial_photos],
-            ['Date:', formData.aerial_date],
-            ['Maps:', formData.maps_source]
-        ]);
-        
-        if (yPos > 250) { doc.addPage(); yPos = 20; }
-
-        addSection("Public Services", [
-            ['Gas Company:', formData.gas_company],
-            ['Representative:', formData.gas_rep],
-            ['Tel:', formData.gas_tel],
-            ['Electric Co:', formData.electric_company],
-            ['Representative:', formData.electric_rep],
-            ['Tel:', formData.electric_tel],
-            ['Telephone Co:', formData.tel_company],
-            ['Representative:', formData.tel_rep],
-            ['Tel:', formData.tel_tel],
-            ['Sewers:', formData.sewers],
-            ['Water:', formData.water]
-        ]);
-        
-        if (yPos > 250) { doc.addPage(); yPos = 20; }
-        
-        addSection("Financial Data", [
-            ['Loan:', `Amount: ${formData.loan_amount}, Type: ${formData.loan_type}, Rate: ${formData.loan_rate}`],
-            ['Loan by:', formData.loan_by],
-            ['Representative:', formData.loan_rep],
-            ['Tel:', formData.loan_tel],
-            ['Bonds or Liens:', formData.bonds_liens],
-            ['Grant:', `Amount: ${formData.grant_amount}, Limitations: ${formData.grant_limitations}`],
-            ['Grant from:', formData.grant_from],
-            ['Representative:', formData.grant_rep],
-            ['Tel:', formData.grant_tel]
-        ]);
-
-        if (yPos > 250) { doc.addPage(); yPos = 20; }
-
-        addSection("Method of Handling", [
-            ['Contract Type:', formData.contract_type],
-            ['Negotiated:', formData.negotiated],
-            ['Bid:', formData.bid],
-            ['Stipulated Sum:', formData.stipulated_sum],
-            ['Cost Plus Fee:', formData.cost_plus_fee],
-            ['Force Amount:', formData.force_amount],
-            ['Equipment:', `Fixed: ${formData.equipment_fixed}, Movable: ${formData.equipment_movable}, Interiors: ${formData.equipment_interiors}`],
-            ['Landscaping:', formData.landscaping]
-        ]);
-        
-        addSection("Sketch of Property", [['Notations:', formData.sketch_notes]]);
-
-
-        doc.save('project-data.pdf');
-        
         toast({
-            title: "Download Started",
-            description: "The project data PDF is being generated.",
+            title: "Preparing PDF",
+            description: "Your document will be ready to print or save shortly.",
         });
+        setTimeout(() => window.print(), 500);
     }
     
     return (
-        <div className="space-y-8">
-            <DashboardPageHeader
-                title="Project Data"
-                description="A comprehensive data sheet for the project."
-                imageUrl={image?.imageUrl || ''}
-                imageHint={image?.imageHint || ''}
-            />
+        <div className="space-y-8 project-data-page">
+             <div className='no-print'>
+                <DashboardPageHeader
+                    title="Project Data"
+                    description="A comprehensive data sheet for the project."
+                    imageUrl={image?.imageUrl || ''}
+                    imageHint={image?.imageHint || ''}
+                />
+            </div>
 
             <Card>
                 <CardContent className="p-6 md:p-8">
@@ -248,9 +108,9 @@ export default function ProjectDataPage() {
                         <Section>
                             <InputRow label="Proposed Improvements:" id="proposed_improvements" name="proposed_improvements" value={formData.proposed_improvements} onChange={handleChange} />
                             <InputRow label="Building Dept. Classification:" id="building_classification" name="building_classification" value={formData.building_classification} onChange={handleChange}/>
-                            <div className="flex items-center gap-4">
-                                <Label className="w-48 text-right">Set Backs:</Label>
-                                <div className="flex-1 grid grid-cols-5 gap-2">
+                            <div className="flex items-center gap-4 py-1">
+                                <Label className="w-48 text-right shrink-0">Set Backs:</Label>
+                                <div className="flex-1 grid grid-cols-2 md:grid-cols-5 gap-2">
                                     <Input name="setback_n" placeholder="N" value={formData.setback_n} onChange={handleChange}/>
                                     <Input name="setback_e" placeholder="E" value={formData.setback_e} onChange={handleChange}/>
                                     <Input name="setback_s" placeholder="S" value={formData.setback_s} onChange={handleChange}/>
@@ -261,14 +121,14 @@ export default function ProjectDataPage() {
                             <InputRow label="Cost:" id="project_cost" name="project_cost" value={formData.project_cost} onChange={handleChange}/>
                             <InputRow label="Stories:" id="project_stories" name="project_stories" value={formData.project_stories} onChange={handleChange}/>
                             <InputRow label="Fire Zone:" id="fire_zone" name="fire_zone" value={formData.fire_zone} onChange={handleChange}/>
-                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="agency_approvals">Other Agency Standards or Approvals Required:</Label>
-                                <Textarea id="agency_approvals" name="agency_approvals" value={formData.agency_approvals} onChange={handleChange}/>
+                             <div className="flex items-start gap-4 py-1">
+                                <Label htmlFor="agency_approvals" className="w-48 text-right shrink-0 pt-2">Other Agency Standards or Approvals Required:</Label>
+                                <Textarea id="agency_approvals" name="agency_approvals" value={formData.agency_approvals} onChange={handleChange} rows={2}/>
                             </div>
                         </Section>
                         
                         <Section title="Site Legal Description">
-                             <Textarea id="site_legal_description" name="site_legal_description" value={formData.site_legal_description} onChange={handleChange}/>
+                             <InputRow label="Description:" id="site_legal_description" name="site_legal_description" type="textarea" value={formData.site_legal_description} onChange={handleChange}/>
                              <InputRow label="Deed recorded in Vol." id="deed_vol" name="deed_vol" value={formData.deed_vol} onChange={handleChange}/>
                              <InputRow label="Page" id="deed_page" name="deed_page" value={formData.deed_page} onChange={handleChange}/>
                              <InputRow label="at" id="deed_at" name="deed_at" value={formData.deed_at} onChange={handleChange}/>
@@ -277,9 +137,9 @@ export default function ProjectDataPage() {
                              <InputRow label="Restrictions:" id="restrictions" name="restrictions" value={formData.restrictions} onChange={handleChange}/>
                              <InputRow label="Easements:" id="easements" name="easements" value={formData.easements} onChange={handleChange}/>
                              <InputRow label="Liens, Leases:" id="liens_leases" name="liens_leases" value={formData.liens_leases} onChange={handleChange}/>
-                             <div className="flex items-center gap-4">
-                                <Label className="w-48 text-right">Lot Dimensions:</Label>
-                                <div className="flex-1 grid grid-cols-3 gap-2">
+                             <div className="flex items-center gap-4 py-1">
+                                <Label className="w-48 text-right shrink-0">Lot Dimensions:</Label>
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
                                     <Input name="lot_dimensions" placeholder="Dimensions" value={formData.lot_dimensions} onChange={handleChange}/>
                                     <Input name="lot_facing" placeholder="Facing" value={formData.lot_facing} onChange={handleChange}/>
                                     <Input name="lot_value" placeholder="Value" value={formData.lot_value} onChange={handleChange}/>
@@ -325,9 +185,9 @@ export default function ProjectDataPage() {
                         </Section>
 
                         <Section title="Financial Data">
-                            <div className="flex items-center gap-4">
-                                <Label className="w-48 text-right">Loan:</Label>
-                                <div className="flex-1 grid grid-cols-3 gap-2">
+                            <div className="flex items-center gap-4 py-1">
+                                <Label className="w-48 text-right shrink-0">Loan:</Label>
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
                                     <Input name="loan_amount" placeholder="Amount" value={formData.loan_amount} onChange={handleChange}/>
                                     <Input name="loan_type" placeholder="Type" value={formData.loan_type} onChange={handleChange}/>
                                     <Input name="loan_rate" placeholder="Rate" value={formData.loan_rate} onChange={handleChange}/>
@@ -337,9 +197,9 @@ export default function ProjectDataPage() {
                              <InputRow label="Representative:" id="loan_rep" name="loan_rep" value={formData.loan_rep} onChange={handleChange}/>
                              <InputRow label="Tel:" id="loan_tel" name="loan_tel" value={formData.loan_tel} onChange={handleChange}/>
                             <InputRow label="Bonds or Liens:" id="bonds_liens" name="bonds_liens" value={formData.bonds_liens} onChange={handleChange}/>
-                            <div className="flex items-center gap-4">
-                                <Label className="w-48 text-right">Grant:</Label>
-                                <div className="flex-1 grid grid-cols-2 gap-2">
+                            <div className="flex items-center gap-4 py-1">
+                                <Label className="w-48 text-right shrink-0">Grant:</Label>
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
                                     <Input name="grant_amount" placeholder="Amount" value={formData.grant_amount} onChange={handleChange}/>
                                     <Input name="grant_limitations" placeholder="Limitations" value={formData.grant_limitations} onChange={handleChange}/>
                                 </div>
@@ -350,8 +210,8 @@ export default function ProjectDataPage() {
                         </Section>
                         
                         <Section title="Method of Handling">
-                             <div className="flex items-center gap-4">
-                                <Label className="w-48 text-right">Contract Type:</Label>
+                             <div className="flex items-center gap-4 py-1">
+                                <Label className="w-48 text-right shrink-0">Contract Type:</Label>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2"><input type="radio" id="single_contract" name="contract_type" value="single" checked={formData.contract_type === 'single'} onChange={handleChange} /><Label htmlFor="single_contract">Single</Label></div>
                                     <div className="flex items-center gap-2"><input type="radio" id="separate_contract" name="contract_type" value="separate" checked={formData.contract_type === 'separate'} onChange={handleChange} /><Label htmlFor="separate_contract">Separate</Label></div>
@@ -362,9 +222,9 @@ export default function ProjectDataPage() {
                             <InputRow label="Stipulated Sum:" id="stipulated_sum" name="stipulated_sum" value={formData.stipulated_sum} onChange={handleChange}/>
                             <InputRow label="Cost Plus Fee:" id="cost_plus_fee" name="cost_plus_fee" value={formData.cost_plus_fee} onChange={handleChange}/>
                             <InputRow label="Force Amount:" id="force_amount" name="force_amount" value={formData.force_amount} onChange={handleChange}/>
-                            <div className="flex items-center gap-4">
-                                <Label className="w-48 text-right">Equipment:</Label>
-                                <div className="flex-1 grid grid-cols-3 gap-2">
+                            <div className="flex items-center gap-4 py-1">
+                                <Label className="w-48 text-right shrink-0">Equipment:</Label>
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
                                     <Input name="equipment_fixed" placeholder="Fixed" value={formData.equipment_fixed} onChange={handleChange}/>
                                     <Input name="equipment_movable" placeholder="Movable" value={formData.equipment_movable} onChange={handleChange}/>
                                     <Input name="equipment_interiors" placeholder="Interiors" value={formData.equipment_interiors} onChange={handleChange}/>
@@ -374,15 +234,12 @@ export default function ProjectDataPage() {
                         </Section>
 
                         <Section title="Sketch of Property">
-                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="sketch_notes">Notations on existing improvements, disposal thereof, utilities, tree, etc.; indicated North; notations on other Project provision:</Label>
-                                <Textarea id="sketch_notes" name="sketch_notes" rows={5} value={formData.sketch_notes} onChange={handleChange}/>
-                            </div>
+                             <InputRow label="Notations:" id="sketch_notes" name="sketch_notes" type="textarea" value={formData.sketch_notes} onChange={handleChange} />
                         </Section>
 
-                        <div className="flex justify-end gap-4 mt-12">
+                        <div className="flex justify-end gap-4 mt-12 no-print">
                             <Button type="button" onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                            <Button type="button" onClick={handleDownloadPdf} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                            <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download/Print PDF</Button>
                         </div>
                     </form>
                 </CardContent>
