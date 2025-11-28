@@ -192,8 +192,8 @@ export default function TimelinePage() {
         yPos += 10;
         
         (doc as any).autoTable({
-            head: [['ID', 'Task Name', 'Duration', 'Start', 'Finish', 'Predecessor']],
-            body: tasks.map(t => [t.taskId, t.taskName, t.duration, t.start, t.finish, t.predecessor]),
+            head: [['ID', 'Task Name', 'Duration', 'Start', 'Finish', 'Predecessor', 'Action']],
+            body: tasks.map(t => [t.taskId, t.taskName, t.duration, t.start, t.finish, t.predecessor, '']),
             startY: yPos,
             theme: 'grid',
             didParseCell: function(data: any) {
