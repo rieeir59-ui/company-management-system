@@ -7,7 +7,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, Download } from 'lucide-react';
+import { Save, Download, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -106,7 +106,7 @@ export default function ProjectAgreementPage() {
     }
 
     const handleDownloadPdf = () => {
-        const doc = new jsPDF();
+        const doc = new jsPDF() as any;
         const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
         const pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
         const margin = 14;
@@ -272,6 +272,46 @@ export default function ProjectAgreementPage() {
         toast({
             title: "Download Started",
             description: "The project agreement PDF is being generated.",
+        });
+    }
+
+    const handleDownloadDoc = () => {
+        const content = document.getElementById('agreement-content')?.innerText || '';
+        
+        let htmlContent = `
+            <html>
+                <head><title>Project Agreement</title></head>
+                <body>
+                    <h1>COMMERCIAL AGREEMENT</h1>
+                    <p>Made as of the day ${day || '________________'}</p>
+                    <p>Between the Owner: ${owner || '________________'}</p>
+                    <p>And the Firm: Isbah Hassan & Associates</p>
+                    <p>For the Design of: ${designOf || '________________'}</p>
+                    <p>Address: ${address || '________________'}</p>
+                    <br/>
+                    <h3>Cost Breakdown</h3>
+                    <p>Covered Area of Project: ${coveredArea}</p>
+                    <p>Consultancy Charges @ Rs ___/Sft: ${consultancyCharges}</p>
+                    <p>Sales Tax @ 16%: ${salesTax}</p>
+                    <p>Withholding Tax @ 10%: ${withholdingTax}</p>
+                    <p><b>Final Consultancy Charges: ${finalCharges}</b></p>
+                    <br/>
+                    ${document.getElementById('agreement-content')?.innerHTML}
+                </body>
+            </html>
+        `;
+
+        const blob = new Blob([htmlContent], { type: 'application/msword' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Project-Agreement.doc';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+            title: "Download Started",
+            description: "The project agreement document is being generated.",
         });
     }
     
@@ -486,6 +526,7 @@ export default function ProjectAgreementPage() {
                     <div className="flex justify-end gap-4 mt-12">
                         <Button type="button" onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Record</Button>
                         <Button type="button" onClick={handleDownloadPdf} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                        <Button type="button" onClick={handleDownloadDoc} variant="outline"><FileText className="mr-2 h-4 w-4" /> Download Document</Button>
                     </div>
                 </CardContent>
             </Card>
