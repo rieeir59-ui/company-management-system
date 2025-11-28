@@ -404,13 +404,13 @@ const SidebarContent = React.forwardRef<
       ref={ref}
       data-sidebar="content"
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto group-data-[collapsible=icon]:overflow-hidden p-2",
+        "flex min-h-0 flex-1 flex-col gap-2 p-2 group-data-[collapsible=icon]:overflow-hidden group-data-[state=expanded]:overflow-y-auto",
         className
       )}
       {...props}
     />
-  )
-})
+  );
+});
 SidebarContent.displayName = "SidebarContent"
 
 const SidebarGroup = React.forwardRef<
