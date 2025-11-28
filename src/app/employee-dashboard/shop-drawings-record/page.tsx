@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -78,11 +77,11 @@ export default function ShopDrawingsRecordPage() {
         handleRowChange(id, 'action', newActions);
     };
 
-    const handleCopiesCheckboxChange = (id: number, value: string) => {
+    const handleCopiesCheckboxChange = (id: number, value: string, checked: boolean) => {
         const currentValues = rows.find(row => row.id === id)?.copiesTo || [];
-        const newValues = currentValues.includes(value)
-            ? currentValues.filter(v => v !== value)
-            : [...currentValues, value];
+        const newValues = checked
+            ? [...currentValues, value]
+            : currentValues.filter(v => v !== value);
         handleRowChange(id, 'copiesTo', newValues);
     };
 
@@ -158,15 +157,15 @@ export default function ShopDrawingsRecordPage() {
             row.dateSent,
             row.numCopies,
             row.dateRetdReferred,
-            row.action.includes('approved') ? 'X' : '',
-            row.action.includes('approved_as_noted') ? 'X' : '',
-            row.action.includes('revise_resubmit') ? 'X' : '',
-            row.action.includes('not_approved') ? 'X' : '',
+            row.action.includes('approved') ? '✓' : '',
+            row.action.includes('approved_as_noted') ? '✓' : '',
+            row.action.includes('revise_resubmit') ? '✓' : '',
+            row.action.includes('not_approved') ? '✓' : '',
             row.dateRetdAction,
-            row.copiesTo.includes('Contractor') ? 'X' : '',
-            row.copiesTo.includes('Owner') ? 'X' : '',
-            row.copiesTo.includes('Field') ? 'X' : '',
-            row.copiesTo.includes('File') ? 'X' : '',
+            row.copiesTo.includes('Contractor') ? '✓' : '',
+            row.copiesTo.includes('Owner') ? '✓' : '',
+            row.copiesTo.includes('Field') ? '✓' : '',
+            row.copiesTo.includes('File') ? '✓' : '',
         ]);
 
         doc.autoTable({
@@ -177,7 +176,7 @@ export default function ShopDrawingsRecordPage() {
             headStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold', halign: 'center', valign: 'middle' },
             styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
             didParseCell: function (data) {
-                // Center align the 'X' marks
+                // Center align the '✓' marks
                 const checkboxColumns = [8, 9, 10, 11, 13, 14, 15, 16];
                 if (data.body && checkboxColumns.includes(data.column.index)) {
                     data.cell.styles.halign = 'center';
@@ -251,10 +250,10 @@ export default function ShopDrawingsRecordPage() {
                                 <div className="p-4 border rounded-md">
                                     <h4 className="font-semibold mb-2">Copies To</h4>
                                      <div className="flex flex-wrap gap-4">
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Contractor')} onCheckedChange={() => handleCopiesCheckboxChange(row.id, 'Contractor')} /><Label>Contractor</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Owner')} onCheckedChange={() => handleCopiesCheckboxChange(row.id, 'Owner')} /><Label>Owner</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Field')} onCheckedChange={() => handleCopiesCheckboxChange(row.id, 'Field')} /><Label>Field</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('File')} onCheckedChange={() => handleCopiesCheckboxChange(row.id, 'File')} /><Label>File</Label></div>
+                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Contractor')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'Contractor', !!c)} /><Label>Contractor</Label></div>
+                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Owner')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'Owner', !!c)} /><Label>Owner</Label></div>
+                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Field')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'Field', !!c)} /><Label>Field</Label></div>
+                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('File')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'File', !!c)} /><Label>File</Label></div>
                                      </div>
                                 </div>
 
