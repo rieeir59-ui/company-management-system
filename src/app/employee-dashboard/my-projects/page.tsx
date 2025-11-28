@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Loader2 } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
@@ -238,6 +239,10 @@ function MyProjectsComponent() {
 
   const addRow = () => {
       setRows([...rows, { id: Date.now(), projectName: '', detail: '', status: 'not-started', startDate: '', endDate: '' }]);
+  };
+  
+  const removeRow = (id: number) => {
+      setRows(rows.filter(row => row.id !== id));
   };
 
   const handleSave = () => {
@@ -468,7 +473,7 @@ function MyProjectsComponent() {
                                             </TableCell>
                                             <TableCell><Input type="date" value={row.startDate} onChange={e => handleRowChange(row.id, 'startDate', e.target.value)} disabled={!isOwner} /></TableCell>
                                             <TableCell><Input type="date" value={row.endDate} onChange={e => handleRowChange(row.id, 'endDate', e.target.value)} disabled={!isOwner} /></TableCell>
-                                             {isOwner && <TableCell><div/></TableCell>}
+                                             {isOwner && <TableCell><Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>}
                                         </TableRow>
                                     ))}
                                      {filteredRows.length === 0 && (
@@ -505,7 +510,9 @@ export default function EmployeeDashboardPageWrapper() {
         <Loader2 className="h-8 w-8 animate-spin" />
         <span className="ml-4">Loading Page...</span>
       </div>}>
-      <MyProjectsComponent />
+      <EmployeeDashboardComponent />
     </Suspense>
   )
 }
+
+    
