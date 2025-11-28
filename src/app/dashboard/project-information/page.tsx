@@ -217,18 +217,27 @@ export default function ProjectInformationPage() {
         doc.text('PROJECT INFORMATION', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
         yPos += 15;
 
-        const addSection = (title: string, data: string[][]) => {
+        const addSection = (title: string, data: (string | null)[][]) => {
             if (yPos > 260) { doc.addPage(); yPos = 20; }
             doc.autoTable({
                 head: [[title]],
-                body: data,
+                body: data.filter(row => row[1]), // Filter out empty rows
                 startY: yPos,
                 theme: 'grid',
                 headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
+                columnStyles: { 0: { fontStyle: 'bold' } }
             });
             yPos = (doc as any).autoTable.previous.finalY + 10;
         };
-
+        
+        const projectReqs = [
+            `Architectural Designing: ${formState.reqArchitectural ? '☑' : '☐'}`,
+            `Interior Decoration: ${formState.reqInterior ? '☑' : '☐'}`,
+            `Landscaping: ${formState.reqLandscaping ? '☑' : '☐'}`,
+            `Turnkey: ${formState.reqTurnkey ? '☑' : '☐'}`,
+            `Other: ${formState.reqOther ? `☑ ${formState.reqOtherText}` : '☐'}`
+        ].join('\n');
+        
         addSection('Project Information', [
             ['Project', formState.project],
             ['Address', formState.address],
@@ -253,13 +262,6 @@ export default function ProjectInformationPage() {
             ['Phone (Res.)', formState.repResPhone],
         ]);
 
-        const projectReqs = [
-            `Architectural Designing: ${formState.reqArchitectural ? '☑' : '☐'}`,
-            `Interior Decoration: ${formState.reqInterior ? '☑' : '☐'}`,
-            `Landscaping: ${formState.reqLandscaping ? '☑' : '☐'}`,
-            `Turnkey: ${formState.reqTurnkey ? '☑' : '☐'}`,
-            `Other: ${formState.reqOther ? `☑ ${formState.reqOtherText}` : '☐'}`
-        ].join('\n');
         addSection('About Project', [
             ['Address', formState.projectAboutAddress],
             ['Project Reqt.', projectReqs]
@@ -273,12 +275,12 @@ export default function ProjectInformationPage() {
         ]);
 
         addSection("Project's Cost", [
-          ['Architectural Designing', formState.costArchitectural],
-          ['Interior Decoration', formState.costInterior],
-          ['Landscaping', formState.costLandscaping],
-          ['Construction', formState.costConstruction],
-          ['Turnkey', formState.costTurnkey],
-          ['Other', formState.costOther],
+          ['i. Architectural Designing', formState.costArchitectural],
+          ['ii. Interior Decoration', formState.costInterior],
+          ['iii. Landscaping', formState.costLandscaping],
+          ['iv. Construction', formState.costConstruction],
+          ['v. Turnkey', formState.costTurnkey],
+          ['vi. Other', formState.costOther],
         ]);
         
         addSection('Dates Concerned with Project', [
@@ -304,8 +306,8 @@ export default function ProjectInformationPage() {
             ["Existing Structure's Drawings", formState.ownerExistingDrawings],
         ]);
 
-        doc.addPage();
-        yPos = 20;
+        if (yPos > 200) doc.addPage();
+        yPos = doc.previousAutoTable.finalY ? doc.previousAutoTable.finalY + 10 : 20;
 
         addSection('Compensation', [
             ['Initial Payment', formState.compInitialPayment],
@@ -328,14 +330,14 @@ export default function ProjectInformationPage() {
                 consultants[type]?.additionalFee || '',
                 consultants[type]?.architect || '',
                 consultants[type]?.owner || '',
-            ]),
+            ]).filter(row => row.slice(1).some(val => val && val !== '...')),
             startY: yPos, theme: 'grid',
             headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
         });
         yPos = (doc as any).autoTable.previous.finalY + 10;
         
-        doc.addPage();
-        yPos = 20;
+        if (yPos > 200) doc.addPage();
+        yPos = doc.previousAutoTable.finalY ? doc.previousAutoTable.finalY + 10 : 20;
         
         doc.autoTable({
             head: [['Residence Requirements', 'Nos.', 'Remarks']],
@@ -343,7 +345,7 @@ export default function ProjectInformationPage() {
                 req,
                 requirements[req]?.nos || '',
                 requirements[req]?.remarks || '',
-            ]),
+            ]).filter(row => row[1] || row[2]),
             startY: yPos, theme: 'grid',
             headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
         });
