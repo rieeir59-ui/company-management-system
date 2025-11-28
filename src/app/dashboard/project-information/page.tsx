@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -291,72 +292,78 @@ function ProjectInformationComponent() {
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
-        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 14;
         let yPos = 20;
-        
+
         const primaryColor = [45, 95, 51];
         const headingFillColor = [240, 240, 240];
 
         const addSectionTitle = (title: string) => {
-            if (yPos > pageHeight - margin - 20) { doc.addPage(); yPos = 20; }
-            doc.setLineWidth(0.5);
-            doc.setFillColor(headingFillColor[0], headingFillColor[1], headingFillColor[2]);
-            doc.rect(margin, yPos, pageWidth - margin * 2, 8, 'F');
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
+            doc.addPage();
+            yPos = 20;
+            doc.setFontSize(14);
             doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text(title, margin + 2, yPos + 5.5);
-            yPos += 8;
+            doc.text(title, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+            yPos += 15;
             doc.setTextColor(0, 0, 0);
-        };
+        }
         
-        const addKeyValuePair = (label: string, value: string) => {
-            if (!value) return;
-            if (yPos > pageHeight - margin - 15) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.text(label, margin, yPos);
-            doc.setFont('helvetica', 'normal');
-            const splitValue = doc.splitTextToSize(value, pageWidth - margin * 2 - 50);
-            doc.text(splitValue, margin + 60, yPos);
-            yPos += (splitValue.length * 4) + 4;
+        const addDataAsTable = (title: string, data: [string, string][]) => {
+            if (yPos > 250) { addPageWithHeaderAndFooter() };
+            doc.autoTable({
+                head: [[{ content: title, styles: { fillColor: headingFillColor, textColor: 0, fontStyle: 'bold' } }]],
+                body: data,
+                startY: yPos,
+                theme: 'grid',
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 } },
+            });
+            yPos = (doc as any).autoTable.previous.finalY + 10;
+        }
+
+        const addPageWithHeaderAndFooter = () => {
+            doc.addPage();
+            yPos = 20;
+            addHeader();
         };
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text('PROJECT INFORMATION', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 15;
-        doc.setTextColor(0, 0, 0);
+        const addHeader = () => {
+             doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text('PROJECT INFORMATION', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+            yPos += 15;
+            doc.setTextColor(0, 0, 0);
+        }
 
-        addKeyValuePair('Project:', formState.project);
-        addKeyValuePair('Address:', formState.address);
-        addKeyValuePair('Project No:', formState.projectNo);
-        addKeyValuePair('Prepared By:', formState.preparedBy);
-        addKeyValuePair('Prepared Date:', formState.preparedDate);
-        yPos += 5;
+        addHeader();
 
-        addSectionTitle("About Owner");
-        addKeyValuePair('Full Name:', formState.ownerFullName);
-        addKeyValuePair('Address (Office):', formState.ownerOfficeAddress);
-        addKeyValuePair('Address (Res.):', formState.ownerResAddress);
-        addKeyValuePair('Phone (Office):', formState.ownerOfficePhone);
-        addKeyValuePair('Phone (Res.):', formState.ownerResPhone);
-        yPos += 5;
+        // Basic Info
+        addDataAsTable('Project Information', [
+            ['Project', formState.project],
+            ['Address', formState.address],
+            ['Project No', formState.projectNo],
+            ['Prepared By', formState.preparedBy],
+            ['Prepared Date', formState.preparedDate],
+        ]);
 
-        addSectionTitle("Owner's Project Representative");
-        addKeyValuePair('Name:', formState.repName);
-        addKeyValuePair('Address (Office):', formState.repOfficeAddress);
-        addKeyValuePair('Address (Res.):', formState.repResAddress);
-        addKeyValuePair('Phone (Office):', formState.repOfficePhone);
-        addKeyValuePair('Phone (Res.):', formState.repResPhone);
-        yPos += 5;
+        // Owner Info
+        addDataAsTable('About Owner', [
+            ['Full Name', formState.ownerFullName],
+            ['Office Address', formState.ownerOfficeAddress],
+            ['Residence Address', formState.ownerResAddress],
+            ['Office Phone', formState.ownerOfficePhone],
+            ['Residence Phone', formState.ownerResPhone],
+        ]);
 
-        addSectionTitle('About Project');
-        addKeyValuePair('Address:', formState.projectAboutAddress);
+        // Representative Info
+        addDataAsTable("Owner's Project Representative", [
+            ['Name', formState.repName],
+            ['Office Address', formState.repOfficeAddress],
+            ['Residence Address', formState.repResAddress],
+            ['Office Phone', formState.repOfficePhone],
+            ['Residence Phone', formState.repResPhone],
+        ]);
+
+        // About Project
         const reqs = [
           formState.reqArchitectural && 'Architectural Designing',
           formState.reqInterior && 'Interior Decoration',
@@ -364,65 +371,75 @@ function ProjectInformationComponent() {
           formState.reqTurnkey && 'Turnkey',
           formState.reqOther && `Other: ${formState.reqOtherText}`
         ].filter(Boolean).join(', ');
-        addKeyValuePair('Project Reqt.:', reqs);
-        yPos += 5;
-
-        addSectionTitle('Project Details');
-        addKeyValuePair('Project Type:', formState.projectType);
-        addKeyValuePair('Project Status:', formState.projectStatus);
-        addKeyValuePair('Project Area:', formState.projectArea);
-        addKeyValuePair('Special Requirements:', formState.specialRequirements);
-        yPos += 5;
-
-        addSectionTitle("Project's Cost");
-        addKeyValuePair('i. Architectural Designing:', formState.costArchitectural);
-        addKeyValuePair('ii. Interior Decoration:', formState.costInterior);
-        addKeyValuePair('iii. Landscaping:', formState.costLandscaping);
-        addKeyValuePair('iv. Construction:', formState.costConstruction);
-        addKeyValuePair('v. Turnkey:', formState.costTurnkey);
-        addKeyValuePair('vi. Other:', formState.costOther);
-        yPos += 5;
-
-        addSectionTitle('Dates Concerned with Project');
-        addKeyValuePair('First Information about Project:', formState.dateFirstInfo);
-        addKeyValuePair('First Meeting:', formState.dateFirstMeeting);
-        addKeyValuePair('First Working on Project:', formState.dateFirstWorking);
-        addKeyValuePair('First Proposal:', `Start: ${formState.dateFirstProposalStart}, Completion: ${formState.dateFirstProposalEnd}`);
-        addKeyValuePair('Second Proposal:', `Start: ${formState.dateSecondProposalStart}, Completion: ${formState.dateSecondProposalEnd}`);
-        addKeyValuePair('First Information:', formState.dateFirstInfo2);
-        addKeyValuePair('Working on Finalized Proposal:', formState.dateWorkingFinalized);
-        addKeyValuePair('Revised Presentation:', formState.dateRevisedPresentation);
-        addKeyValuePair('Quotation:', formState.dateQuotation);
-        addKeyValuePair('Drawings:', `Start: ${formState.dateDrawingsStart}, Completion: ${formState.dateDrawingsEnd}`);
-        addKeyValuePair('Other Major Projects Milestone Dates:', formState.dateOtherMilestones);
-        yPos += 5;
-
-        addSectionTitle('Provided by Owner');
-        addKeyValuePair('Program:', formState.ownerProgram);
-        addKeyValuePair('Suggested Schedule:', formState.ownerSchedule);
-        addKeyValuePair('Legal Site Description & Other Concerned Documents:', formState.ownerLegal);
-        addKeyValuePair('Land Survey Report:', formState.ownerLandSurvey);
-        addKeyValuePair('Geo-Technical, Tests and Other Site Information:', formState.ownerGeoTech);
-        addKeyValuePair("Existing Structure's Drawings:", formState.ownerExistingDrawings);
-        yPos += 5;
-
-        addSectionTitle('Compensation');
-        addKeyValuePair('Initial Payment:', formState.compInitialPayment);
-        addKeyValuePair('Basic Services (% of Cost of Construction):', formState.compBasicServices);
-        addKeyValuePair('Breakdown - Schematic Design (%):', formState.compSchematic);
-        addKeyValuePair('Breakdown - Design Development (%):', formState.compDesignDev);
-        addKeyValuePair("Breakdown - Construction Doc's (%):", formState.compConstructionDocs);
-        addKeyValuePair('Breakdown - Bidding / Negotiation (%):', formState.compBidding);
-        addKeyValuePair('Breakdown - Construction Contract Admin (%):', formState.compConstructionAdmin);
-        addKeyValuePair('Additional Services (Multiple of):', formState.compAdditionalServices);
-        addKeyValuePair('Reimbursable Expenses:', formState.compReimbursable);
-        addKeyValuePair('Other:', formState.compOther);
-        yPos += 5;
+        addDataAsTable('About Project', [
+            ['Address', formState.projectAboutAddress],
+            ['Project Reqt.', reqs]
+        ]);
         
-        doc.addPage();
-        yPos = 20;
+        addPageWithHeaderAndFooter();
 
-        addSectionTitle('Consultants');
+        // Project Details
+        addDataAsTable('Project Details', [
+            ['Project Type', formState.projectType],
+            ['Project Status', formState.projectStatus],
+            ['Project Area', formState.projectArea],
+            ['Special Requirements', formState.specialRequirements]
+        ]);
+        
+        // Project's Cost
+        addDataAsTable("Project's Cost", [
+            ['Architectural Designing', formState.costArchitectural],
+            ['Interior Decoration', formState.costInterior],
+            ['Landscaping', formState.costLandscaping],
+            ['Construction', formState.costConstruction],
+            ['Turnkey', formState.costTurnkey],
+            ['Other', formState.costOther]
+        ]);
+        
+        addPageWithHeaderAndFooter();
+
+        // Dates
+        addDataAsTable('Dates Concerned with Project', [
+            ['First Information about Project', formState.dateFirstInfo],
+            ['First Meeting', formState.dateFirstMeeting],
+            ['First Working on Project', formState.dateFirstWorking],
+            ['First Proposal', `Start: ${formState.dateFirstProposalStart}, End: ${formState.dateFirstProposalEnd}`],
+            ['Second Proposal', `Start: ${formState.dateSecondProposalStart}, End: ${formState.dateSecondProposalEnd}`],
+            ['First Information (2)', formState.dateFirstInfo2],
+            ['Working on Finalized Proposal', formState.dateWorkingFinalized],
+            ['Revised Presentation', formState.dateRevisedPresentation],
+            ['Quotation', formState.dateQuotation],
+            ['Drawings', `Start: ${formState.dateDrawingsStart}, End: ${formState.dateDrawingsEnd}`],
+            ['Other Major Milestones', formState.dateOtherMilestones]
+        ]);
+        
+        // Provided by Owner
+        addDataAsTable('Provided by Owner', [
+            ['Program', formState.ownerProgram],
+            ['Suggested Schedule', formState.ownerSchedule],
+            ['Legal Docs', formState.ownerLegal],
+            ['Land Survey', formState.ownerLandSurvey],
+            ['Geo-Technical', formState.ownerGeoTech],
+            ['Existing Drawings', formState.ownerExistingDrawings]
+        ]);
+
+        addPageWithHeaderAndFooter();
+        
+        // Compensation
+        addDataAsTable('Compensation', [
+            ['Initial Payment', formState.compInitialPayment],
+            ['Basic Services (% of Cost)', formState.compBasicServices],
+            ['Schematic Design (%)', formState.compSchematic],
+            ['Design Development (%)', formState.compDesignDev],
+            ["Construction Doc's (%)", formState.compConstructionDocs],
+            ['Bidding/Negotiation (%)', formState.compBidding],
+            ['Construction Contract Admin (%)', formState.compConstructionAdmin],
+            ['Additional Services (Multiple of)', formState.compAdditionalServices],
+            ['Reimbursable Expenses', formState.compReimbursable],
+            ['Other', formState.compOther]
+        ]);
+
+        // Consultants
         const consultantsBody = consultantTypes.map(type => [
             type,
             consultants[type]?.withinFee || '',
@@ -432,21 +449,33 @@ function ProjectInformationComponent() {
         ]).filter(row => row.slice(1).some(val => val));
         
         doc.autoTable({
-            head: [['Type', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
+            head: [['Consultants']],
+            body: [],
+            startY: yPos,
+        });
+        yPos = (doc as any).autoTable.previous.finalY;
+
+        doc.autoTable({
+            head: [['Type', 'Within Fee', 'Additional', 'By Architect', 'By Owner']],
             body: consultantsBody,
             startY: yPos, theme: 'grid',
             headStyles: { fontStyle: 'bold', fillColor: headingFillColor, textColor: 0 },
             styles: { fontSize: 8 },
         });
         yPos = (doc as any).autoTable.previous.finalY + 10;
-        
-        addSectionTitle('Requirements - Residence');
+
+        // Requirements
         const requirementsBody = residenceRequirements.map(req => [
-            req,
-            requirements[req].nos,
-            requirements[req].remarks,
+            req, requirements[req].nos, requirements[req].remarks,
         ]).filter(row => row.slice(1).some(val => val));
         
+        doc.autoTable({
+            head: [['Requirements - Residence']],
+            body: [],
+            startY: yPos,
+        });
+        yPos = (doc as any).autoTable.previous.finalY;
+
         doc.autoTable({
             head: [['Description', 'Nos.', 'Remarks']],
             body: requirementsBody,
@@ -456,17 +485,9 @@ function ProjectInformationComponent() {
         });
         yPos = (doc as any).autoTable.previous.finalY + 10;
 
-        addSectionTitle('Special Confidential Requirements');
-        addKeyValuePair('', formState.specialConfidential);
-        addSectionTitle('Miscellaneous Notes');
-        addKeyValuePair('', formState.miscNotes);
-
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
-        }
+        // Notes
+        addDataAsTable('Special Confidential Requirements', [[ 'Notes', formState.specialConfidential ]]);
+        addDataAsTable('Miscellaneous Notes', [[ 'Notes', formState.miscNotes ]]);
 
         doc.save(`${formState.project || 'project'}_information.pdf`);
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
