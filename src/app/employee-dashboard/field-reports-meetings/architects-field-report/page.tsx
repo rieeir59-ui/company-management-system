@@ -31,6 +31,8 @@ export default function ArchitectsFieldReportPage() {
     const handleDownloadPdf = () => {
         const doc = new jsPDF();
         let yPos = 20;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522 , info@isbahhassan.com , www.isbahhassan.com";
 
         const getVal = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '';
 
@@ -48,7 +50,7 @@ export default function ArchitectsFieldReportPage() {
         yPos += 15;
 
         doc.setFontSize(10);
-        doc.autoTable({
+        (doc as any).autoTable({
             startY: yPos,
             theme: 'plain',
             body: [
@@ -100,7 +102,13 @@ export default function ArchitectsFieldReportPage() {
             }
             signatureLine(label, 14 + (index % 3) * 60);
         })
-
+        
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
 
         doc.save('architects-field-report.pdf');
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
