@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -27,10 +26,10 @@ const Section = ({ title, children }: { title?: string; children: React.ReactNod
   </div>
 );
 
-const InputRow = ({ label, id, placeholder, type = 'text' }: { label: string; id: string; placeholder?: string; type?: string; }) => (
+const InputRow = ({ label, id, value, onChange, placeholder = '', type = 'text' }: { label: string, id: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder?: string, type?: string }) => (
     <div className="flex items-center gap-4">
         <Label htmlFor={id} className="w-48 text-right">{label}</Label>
-        <Input id={id} name={id} placeholder={placeholder} type={type} className="flex-1" />
+        <Input id={id} name={id} value={value} onChange={onChange} placeholder={placeholder} type={type} className="flex-1" />
     </div>
 );
 
@@ -38,6 +37,33 @@ const InputRow = ({ label, id, placeholder, type = 'text' }: { label: string; id
 export default function ProjectDataPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-data');
     const { toast } = useToast();
+
+    const [formData, setFormData] = useState({
+        project_name: '', project_address: '', project_owner: '', architect_project_no: '',
+        project_date: '', project_tel: '', business_address: '', home_address: '',
+        business_tel: '', home_tel: '', proposed_improvements: '', building_classification: '',
+        setback_n: '', setback_e: '', setback_s: '', setback_w: '', setback_coverage: '',
+        project_cost: '', project_stories: '', fire_zone: '', agency_approvals: '',
+        site_legal_description: '', deed_vol: '', deed_page: '', deed_at: '', deed_to: '',
+        deed_date: '', restrictions: '', easements: '', liens_leases: '', lot_dimensions: '',
+        lot_facing: '', lot_value: '', adjacent_property_use: '', owner_name_contact: '',
+        rep_name_contact: '', contact_address: '', contact_tel: '', attorney: '',
+        insurance_advisor: '', consultant_on: '', survey_property: '', survey_property_date: '',
+        survey_topo: '', survey_topo_date: '', soils_tests: '', soils_date: '',
+        aerial_photos: '', aerial_date: '', maps_source: '', gas_company: '', gas_rep: '',
+        gas_tel: '', electric_company: '', electric_rep: '', electric_tel: '',
+        tel_company: '', tel_rep: '', tel_tel: '', sewers: '', water: '',
+        loan_amount: '', loan_type: '', loan_rate: '', loan_by: '', loan_rep: '',
+        loan_tel: '', bonds_liens: '', grant_amount: '', grant_limitations: '',
+        grant_from: '', grant_rep: '', grant_tel: '', contract_type: '', negotiated: '',
+        bid: '', stipulated_sum: '', cost_plus_fee: '', force_amount: '',
+        equipment_fixed: '', equipment_movable: '', equipment_interiors: '',
+        landscaping: '', sketch_notes: ''
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     const handleSave = () => {
         toast({
@@ -47,157 +73,140 @@ export default function ProjectDataPage() {
     }
 
     const handleDownloadPdf = () => {
-        const form = document.getElementById('project-data-form') as HTMLFormElement;
-        if (!form) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not find form data.' });
-            return;
-        }
-
         const doc = new jsPDF() as jsPDFWithAutoTable;
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = 14;
         let yPos = 22;
 
-        const getInputValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.value || '';
-        const getRadioValue = (name: string) => (form.elements.namedItem(name) as HTMLInputElement)?.value || '';
-        
-        const addSectionTitle = (title: string) => {
-            if (yPos > 260) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(40, 58, 90); // A professional blue color
-            doc.text(title, margin, yPos);
-            doc.setTextColor(0, 0, 0); // Reset to black
-            yPos += 8;
-        };
-
-        const addKeyValuePair = (label: string, value: string) => {
-            if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.text(label, margin, yPos);
-            doc.setFont('helvetica', 'normal');
-            const splitValue = doc.splitTextToSize(value, pageWidth - margin * 2 - 50);
-            doc.text(splitValue, margin + 60, yPos);
-            yPos += (splitValue.length * 5) + 2;
-        };
-        
-        const addTextArea = (label: string, value: string) => {
-            if (yPos > 260) { doc.addPage(); yPos = 20; }
-             doc.setFont('helvetica', 'bold');
-            doc.text(label, margin, yPos);
-            yPos += 7;
-            doc.setFont('helvetica', 'normal');
-            const splitText = doc.splitTextToSize(value, pageWidth - margin * 2 - 5);
-            doc.text(splitText, margin + 5, yPos);
-            yPos += (splitText.length * 5) + 5;
+        const addSection = (title: string, data: [string, string][]) => {
+             if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+            doc.autoTable({
+                startY: yPos,
+                head: [[title]],
+                body: data,
+                theme: 'grid',
+                headStyles: { fillColor: [45, 95, 51] },
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 70 } },
+            });
+            yPos = doc.autoTable.previous.finalY + 10;
         }
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
-        doc.setTextColor(45, 95, 51); // Primary color for main heading
+        doc.setTextColor(45, 95, 51);
         doc.text('PROJECT DATA', pageWidth / 2, 15, { align: 'center' });
         doc.setTextColor(0, 0, 0);
 
-        // --- General Info ---
-        addSectionTitle("Project Information");
-        addKeyValuePair('Project:', getInputValue('project_name'));
-        addKeyValuePair('Address:', getInputValue('project_address'));
-        addKeyValuePair('Owner:', getInputValue('project_owner'));
-        addKeyValuePair("Architect's Project No.:", getInputValue('architect_project_no'));
-        addKeyValuePair('Date:', getInputValue('project_date'));
-        addKeyValuePair('Tel:', getInputValue('project_tel'));
-        addKeyValuePair('Business Address:', getInputValue('business_address'));
-        addKeyValuePair('Home Address:', getInputValue('home_address'));
-        addKeyValuePair('Tel (Business):', getInputValue('business_tel'));
-        addKeyValuePair('Tel (Home):', getInputValue('home_tel'));
+        addSection("Project Information", [
+            ['Project:', formData.project_name],
+            ['Address:', formData.project_address],
+            ['Owner:', formData.project_owner],
+            ["Architect's Project No.:", formData.architect_project_no],
+            ['Date:', formData.project_date],
+            ['Tel:', formData.project_tel],
+            ['Business Address:', formData.business_address],
+            ['Home Address:', formData.home_address],
+            ['Tel (Business):', formData.business_tel],
+            ['Tel (Home):', formData.home_tel]
+        ]);
 
-        // --- Project Details ---
-        addSectionTitle("Project Details");
-        addKeyValuePair('Proposed Improvements:', getInputValue('proposed_improvements'));
-        addKeyValuePair('Building Dept. Classification:', getInputValue('building_classification'));
-        addKeyValuePair('Set Backs:', `N: ${getInputValue('setback_n')}, E: ${getInputValue('setback_e')}, S: ${getInputValue('setback_s')}, W: ${getInputValue('setback_w')}, Coverage: ${getInputValue('setback_coverage')}`);
-        addKeyValuePair('Cost:', getInputValue('project_cost'));
-        addKeyValuePair('Stories:', getInputValue('project_stories'));
-        addKeyValuePair('Fire Zone:', getInputValue('fire_zone'));
-        addTextArea('Other Agency Standards or Approvals Required:', getInputValue('agency_approvals'));
+        addSection("Project Details", [
+            ['Proposed Improvements:', formData.proposed_improvements],
+            ['Building Dept. Classification:', formData.building_classification],
+            ['Set Backs:', `N: ${formData.setback_n}, E: ${formData.setback_e}, S: ${formData.setback_s}, W: ${formData.setback_w}, Coverage: ${formData.setback_coverage}`],
+            ['Cost:', formData.project_cost],
+            ['Stories:', formData.project_stories],
+            ['Fire Zone:', formData.fire_zone],
+            ['Other Agency Approvals:', formData.agency_approvals]
+        ]);
+        
+        doc.addPage();
+        yPos = 20;
 
-        // --- Site Legal Description ---
-        addSectionTitle("Site Legal Description");
-        addTextArea('Description:', getInputValue('site_legal_description'));
-        addKeyValuePair('Deed recorded in Vol.:', getInputValue('deed_vol'));
-        addKeyValuePair('Page:', getInputValue('deed_page'));
-        addKeyValuePair('at:', getInputValue('deed_at'));
-        addKeyValuePair('to:', getInputValue('deed_to'));
-        addKeyValuePair('Date:', getInputValue('deed_date'));
-        addKeyValuePair('Restrictions:', getInputValue('restrictions'));
-        addKeyValuePair('Easements:', getInputValue('easements'));
-        addKeyValuePair('Liens, Leases:', getInputValue('liens_leases'));
-        addKeyValuePair('Lot Dimensions:', `Dimensions: ${getInputValue('lot_dimensions')}, Facing: ${getInputValue('lot_facing')}, Value: ${getInputValue('lot_value')}`);
-        addKeyValuePair('Adjacent property use:', getInputValue('adjacent_property_use'));
+        addSection("Site Legal Description", [
+            ['Description:', formData.site_legal_description],
+            ['Deed recorded in Vol.:', formData.deed_vol],
+            ['Page:', formData.deed_page],
+            ['at:', formData.deed_at],
+            ['to:', formData.deed_to],
+            ['Date:', formData.deed_date],
+            ['Restrictions:', formData.restrictions],
+            ['Easements:', formData.easements],
+            ['Liens, Leases:', formData.liens_leases],
+            ['Lot Dimensions:', `Dimensions: ${formData.lot_dimensions}, Facing: ${formData.lot_facing}, Value: ${formData.lot_value}`],
+            ['Adjacent property use:', formData.adjacent_property_use]
+        ]);
 
-        // --- Contacts ---
-        addSectionTitle("Contacts");
-        addKeyValuePair('Owners: Name:', getInputValue('owner_name_contact'));
-        addKeyValuePair('Designated Representative:', getInputValue('rep_name_contact'));
-        addKeyValuePair('Address:', getInputValue('contact_address'));
-        addKeyValuePair('Tel:', getInputValue('contact_tel'));
-        addKeyValuePair('Attorney at Law:', getInputValue('attorney'));
-        addKeyValuePair('Insurance Advisor:', getInputValue('insurance_advisor'));
-        addKeyValuePair('Consultant on:', getInputValue('consultant_on'));
+        addSection("Contacts", [
+            ['Owners: Name:', formData.owner_name_contact],
+            ['Designated Representative:', formData.rep_name_contact],
+            ['Address:', formData.contact_address],
+            ['Tel:', formData.contact_tel],
+            ['Attorney at Law:', formData.attorney],
+            ['Insurance Advisor:', formData.insurance_advisor],
+            ['Consultant on:', formData.consultant_on]
+        ]);
 
-        // --- Site Information Sources ---
-        addSectionTitle("Site Information Sources");
-        addKeyValuePair('Property Survey by:', getInputValue('survey_property'));
-        addKeyValuePair('Date:', getInputValue('survey_property_date'));
-        addKeyValuePair('Topographic Survey by:', getInputValue('survey_topo'));
-        addKeyValuePair('Date:', getInputValue('survey_topo_date'));
-        addKeyValuePair('Soils Tests by:', getInputValue('soils_tests'));
-        addKeyValuePair('Date:', getInputValue('soils_date'));
-        addKeyValuePair('Aerial Photos by:', getInputValue('aerial_photos'));
-        addKeyValuePair('Date:', getInputValue('aerial_date'));
-        addKeyValuePair('Maps:', getInputValue('maps_source'));
+        doc.addPage();
+        yPos = 20;
 
-        // --- Public Services ---
-        addSectionTitle("Public Services");
-        addKeyValuePair('Gas Company (Name, Address):', getInputValue('gas_company'));
-        addKeyValuePair('Representative:', getInputValue('gas_rep'));
-        addKeyValuePair('Tel:', getInputValue('gas_tel'));
-        addKeyValuePair('Electric Co (Name, Address):', getInputValue('electric_company'));
-        addKeyValuePair('Representative:', getInputValue('electric_rep'));
-        addKeyValuePair('Tel:', getInputValue('electric_tel'));
-        addKeyValuePair('Telephone Co (Name, Address):', getInputValue('tel_company'));
-        addKeyValuePair('Representative:', getInputValue('tel_rep'));
-        addKeyValuePair('Tel:', getInputValue('tel_tel'));
-        addKeyValuePair('Sewers:', getInputValue('sewers'));
-        addKeyValuePair('Water:', getInputValue('water'));
+        addSection("Site Information Sources", [
+            ['Property Survey by:', formData.survey_property],
+            ['Date:', formData.survey_property_date],
+            ['Topographic Survey by:', formData.survey_topo],
+            ['Date:', formData.survey_topo_date],
+            ['Soils Tests by:', formData.soils_tests],
+            ['Date:', formData.soils_date],
+            ['Aerial Photos by:', formData.aerial_photos],
+            ['Date:', formData.aerial_date],
+            ['Maps:', formData.maps_source]
+        ]);
 
-        // --- Financial Data ---
-        addSectionTitle("Financial Data");
-        addKeyValuePair('Loan:', `Amount: ${getInputValue('loan_amount')}, Type: ${getInputValue('loan_type')}, Rate: ${getInputValue('loan_rate')}`);
-        addKeyValuePair('Loan by:', getInputValue('loan_by'));
-        addKeyValuePair('Representative:', getInputValue('loan_rep'));
-        addKeyValuePair('Tel:', getInputValue('loan_tel'));
-        addKeyValuePair('Bonds or Liens:', getInputValue('bonds_liens'));
-        addKeyValuePair('Grant:', `Amount: ${getInputValue('grant_amount')}, Limitations: ${getInputValue('grant_limitations')}`);
-        addKeyValuePair('Grant from:', getInputValue('grant_from'));
-        addKeyValuePair('Representative:', getInputValue('grant_rep'));
-        addKeyValuePair('Tel:', getInputValue('grant_tel'));
+        addSection("Public Services", [
+            ['Gas Company:', formData.gas_company],
+            ['Representative:', formData.gas_rep],
+            ['Tel:', formData.gas_tel],
+            ['Electric Co:', formData.electric_company],
+            ['Representative:', formData.electric_rep],
+            ['Tel:', formData.electric_tel],
+            ['Telephone Co:', formData.tel_company],
+            ['Representative:', formData.tel_rep],
+            ['Tel:', formData.tel_tel],
+            ['Sewers:', formData.sewers],
+            ['Water:', formData.water]
+        ]);
+        
+        doc.addPage();
+        yPos = 20;
+        
+        addSection("Financial Data", [
+            ['Loan:', `Amount: ${formData.loan_amount}, Type: ${formData.loan_type}, Rate: ${formData.loan_rate}`],
+            ['Loan by:', formData.loan_by],
+            ['Representative:', formData.loan_rep],
+            ['Tel:', formData.loan_tel],
+            ['Bonds or Liens:', formData.bonds_liens],
+            ['Grant:', `Amount: ${formData.grant_amount}, Limitations: ${formData.grant_limitations}`],
+            ['Grant from:', formData.grant_from],
+            ['Representative:', formData.grant_rep],
+            ['Tel:', formData.grant_tel]
+        ]);
 
-        // --- Method of Handling ---
-        addSectionTitle("Method of Handling");
-        addKeyValuePair('Contract Type:', getRadioValue('contract_type'));
-        addKeyValuePair('Negotiated:', getInputValue('negotiated'));
-        addKeyValuePair('Bid:', getInputValue('bid'));
-        addKeyValuePair('Stipulated Sum:', getInputValue('stipulated_sum'));
-        addKeyValuePair('Cost Plus Fee:', getInputValue('cost_plus_fee'));
-        addKeyValuePair('Force Amount:', getInputValue('force_amount'));
-        addKeyValuePair('Equipment:', `Fixed: ${getInputValue('equipment_fixed')}, Movable: ${getInputValue('equipment_movable')}, Interiors: ${getInputValue('equipment_interiors')}`);
-        addKeyValuePair('Landscaping:', getInputValue('landscaping'));
+        addSection("Method of Handling", [
+            ['Contract Type:', formData.contract_type],
+            ['Negotiated:', formData.negotiated],
+            ['Bid:', formData.bid],
+            ['Stipulated Sum:', formData.stipulated_sum],
+            ['Cost Plus Fee:', formData.cost_plus_fee],
+            ['Force Amount:', formData.force_amount],
+            ['Equipment:', `Fixed: ${formData.equipment_fixed}, Movable: ${formData.equipment_movable}, Interiors: ${formData.equipment_interiors}`],
+            ['Landscaping:', formData.landscaping]
+        ]);
+        
+        addSection("Sketch of Property", [['Notations:', formData.sketch_notes]]);
 
-        // --- Sketch of Property ---
-        addSectionTitle("Sketch of Property");
-        addTextArea('Notations:', getInputValue('sketch_notes'));
 
         doc.save('project-data.pdf');
         
@@ -220,150 +229,150 @@ export default function ProjectDataPage() {
                 <CardContent className="p-6 md:p-8">
                     <form id="project-data-form">
                         <Section>
-                           <InputRow label="Project:" id="project_name" />
-                           <InputRow label="Address:" id="project_address" />
-                           <InputRow label="Owner:" id="project_owner" />
-                           <InputRow label="Architect's Project No." id="architect_project_no" />
-                           <InputRow label="Date:" id="project_date" type="date" />
-                           <InputRow label="Tel:" id="project_tel" />
-                           <InputRow label="Business Address:" id="business_address" />
-                           <InputRow label="Home Address:" id="home_address" />
-                           <InputRow label="Tel (Business):" id="business_tel" />
-                           <InputRow label="Tel (Home):" id="home_tel" />
+                           <InputRow label="Project:" id="project_name" value={formData.project_name} onChange={handleChange}/>
+                           <InputRow label="Address:" id="project_address" value={formData.project_address} onChange={handleChange}/>
+                           <InputRow label="Owner:" id="project_owner" value={formData.project_owner} onChange={handleChange}/>
+                           <InputRow label="Architect's Project No." id="architect_project_no" value={formData.architect_project_no} onChange={handleChange}/>
+                           <InputRow label="Date:" id="project_date" type="date" value={formData.project_date} onChange={handleChange}/>
+                           <InputRow label="Tel:" id="project_tel" value={formData.project_tel} onChange={handleChange}/>
+                           <InputRow label="Business Address:" id="business_address" value={formData.business_address} onChange={handleChange}/>
+                           <InputRow label="Home Address:" id="home_address" value={formData.home_address} onChange={handleChange}/>
+                           <InputRow label="Tel (Business):" id="business_tel" value={formData.business_tel} onChange={handleChange}/>
+                           <InputRow label="Tel (Home):" id="home_tel" value={formData.home_tel} onChange={handleChange}/>
                         </Section>
 
                         <Section>
-                            <InputRow label="Proposed Improvements:" id="proposed_improvements" />
-                            <InputRow label="Building Dept. Classification:" id="building_classification" />
+                            <InputRow label="Proposed Improvements:" id="proposed_improvements" value={formData.proposed_improvements} onChange={handleChange} />
+                            <InputRow label="Building Dept. Classification:" id="building_classification" value={formData.building_classification} onChange={handleChange}/>
                             <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Set Backs:</Label>
                                 <div className="flex-1 grid grid-cols-5 gap-2">
-                                    <Input name="setback_n" placeholder="N" />
-                                    <Input name="setback_e" placeholder="E" />
-                                    <Input name="setback_s" placeholder="S" />
-                                    <Input name="setback_w" placeholder="W" />
-                                    <Input name="setback_coverage" placeholder="Coverage" />
+                                    <Input name="setback_n" placeholder="N" value={formData.setback_n} onChange={handleChange}/>
+                                    <Input name="setback_e" placeholder="E" value={formData.setback_e} onChange={handleChange}/>
+                                    <Input name="setback_s" placeholder="S" value={formData.setback_s} onChange={handleChange}/>
+                                    <Input name="setback_w" placeholder="W" value={formData.setback_w} onChange={handleChange}/>
+                                    <Input name="setback_coverage" placeholder="Coverage" value={formData.setback_coverage} onChange={handleChange}/>
                                 </div>
                             </div>
-                            <InputRow label="Cost:" id="project_cost" />
-                            <InputRow label="Stories:" id="project_stories" />
-                            <InputRow label="Fire Zone:" id="fire_zone" />
+                            <InputRow label="Cost:" id="project_cost" value={formData.project_cost} onChange={handleChange}/>
+                            <InputRow label="Stories:" id="project_stories" value={formData.project_stories} onChange={handleChange}/>
+                            <InputRow label="Fire Zone:" id="fire_zone" value={formData.fire_zone} onChange={handleChange}/>
                              <div className="flex flex-col gap-2">
                                 <Label htmlFor="agency_approvals">Other Agency Standards or Approvals Required:</Label>
-                                <Textarea id="agency_approvals" name="agency_approvals" />
+                                <Textarea id="agency_approvals" name="agency_approvals" value={formData.agency_approvals} onChange={handleChange}/>
                             </div>
                         </Section>
                         
                         <Section title="Site Legal Description">
-                             <Textarea id="site_legal_description" name="site_legal_description" />
-                             <InputRow label="Deed recorded in Vol." id="deed_vol" />
-                             <InputRow label="Page" id="deed_page" />
-                             <InputRow label="at" id="deed_at" />
-                             <InputRow label="to" id="deed_to" />
-                             <InputRow label="Date:" id="deed_date" type="date" />
-                             <InputRow label="Restrictions:" id="restrictions" />
-                             <InputRow label="Easements:" id="easements" />
-                             <InputRow label="Liens, Leases:" id="liens_leases" />
+                             <Textarea id="site_legal_description" name="site_legal_description" value={formData.site_legal_description} onChange={handleChange}/>
+                             <InputRow label="Deed recorded in Vol." id="deed_vol" value={formData.deed_vol} onChange={handleChange}/>
+                             <InputRow label="Page" id="deed_page" value={formData.deed_page} onChange={handleChange}/>
+                             <InputRow label="at" id="deed_at" value={formData.deed_at} onChange={handleChange}/>
+                             <InputRow label="to" id="deed_to" value={formData.deed_to} onChange={handleChange}/>
+                             <InputRow label="Date:" id="deed_date" type="date" value={formData.deed_date} onChange={handleChange}/>
+                             <InputRow label="Restrictions:" id="restrictions" value={formData.restrictions} onChange={handleChange}/>
+                             <InputRow label="Easements:" id="easements" value={formData.easements} onChange={handleChange}/>
+                             <InputRow label="Liens, Leases:" id="liens_leases" value={formData.liens_leases} onChange={handleChange}/>
                              <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Lot Dimensions:</Label>
                                 <div className="flex-1 grid grid-cols-3 gap-2">
-                                    <Input name="lot_dimensions" placeholder="Dimensions" />
-                                    <Input name="lot_facing" placeholder="Facing" />
-                                    <Input name="lot_value" placeholder="Value" />
+                                    <Input name="lot_dimensions" placeholder="Dimensions" value={formData.lot_dimensions} onChange={handleChange}/>
+                                    <Input name="lot_facing" placeholder="Facing" value={formData.lot_facing} onChange={handleChange}/>
+                                    <Input name="lot_value" placeholder="Value" value={formData.lot_value} onChange={handleChange}/>
                                 </div>
                             </div>
-                            <InputRow label="Adjacent property use:" id="adjacent_property_use" />
+                            <InputRow label="Adjacent property use:" id="adjacent_property_use" value={formData.adjacent_property_use} onChange={handleChange}/>
                         </Section>
 
                          <Section title="Contacts">
-                            <InputRow label="Owners: Name:" id="owner_name_contact" />
-                            <InputRow label="Designated Representative:" id="rep_name_contact" />
-                            <InputRow label="Address:" id="contact_address" />
-                            <InputRow label="Tel:" id="contact_tel" />
-                            <InputRow label="Attorney at Law:" id="attorney" />
-                            <InputRow label="Insurance Advisor:" id="insurance_advisor" />
-                            <InputRow label="Consultant on:" id="consultant_on" />
+                            <InputRow label="Owners: Name:" id="owner_name_contact" value={formData.owner_name_contact} onChange={handleChange}/>
+                            <InputRow label="Designated Representative:" id="rep_name_contact" value={formData.rep_name_contact} onChange={handleChange}/>
+                            <InputRow label="Address:" id="contact_address" value={formData.contact_address} onChange={handleChange}/>
+                            <InputRow label="Tel:" id="contact_tel" value={formData.contact_tel} onChange={handleChange}/>
+                            <InputRow label="Attorney at Law:" id="attorney" value={formData.attorney} onChange={handleChange}/>
+                            <InputRow label="Insurance Advisor:" id="insurance_advisor" value={formData.insurance_advisor} onChange={handleChange}/>
+                            <InputRow label="Consultant on:" id="consultant_on" value={formData.consultant_on} onChange={handleChange}/>
                         </Section>
 
                         <Section title="Site Information Sources">
-                            <InputRow label="Property Survey by:" id="survey_property" />
-                            <InputRow label="Date:" id="survey_property_date" type="date" />
-                            <InputRow label="Topographic Survey by:" id="survey_topo" />
-                             <InputRow label="Date:" id="survey_topo_date" type="date" />
-                            <InputRow label="Soils Tests by:" id="soils_tests" />
-                             <InputRow label="Date:" id="soils_date" type="date" />
-                            <InputRow label="Aerial Photos by:" id="aerial_photos" />
-                             <InputRow label="Date:" id="aerial_date" type="date" />
-                            <InputRow label="Maps:" id="maps_source" />
+                            <InputRow label="Property Survey by:" id="survey_property" value={formData.survey_property} onChange={handleChange}/>
+                            <InputRow label="Date:" id="survey_property_date" type="date" value={formData.survey_property_date} onChange={handleChange}/>
+                            <InputRow label="Topographic Survey by:" id="survey_topo" value={formData.survey_topo} onChange={handleChange}/>
+                             <InputRow label="Date:" id="survey_topo_date" type="date" value={formData.survey_topo_date} onChange={handleChange}/>
+                            <InputRow label="Soils Tests by:" id="soils_tests" value={formData.soils_tests} onChange={handleChange}/>
+                             <InputRow label="Date:" id="soils_date" type="date" value={formData.soils_date} onChange={handleChange}/>
+                            <InputRow label="Aerial Photos by:" id="aerial_photos" value={formData.aerial_photos} onChange={handleChange}/>
+                             <InputRow label="Date:" id="aerial_date" type="date" value={formData.aerial_date} onChange={handleChange}/>
+                            <InputRow label="Maps:" id="maps_source" value={formData.maps_source} onChange={handleChange}/>
                         </Section>
 
                         <Section title="Public Services">
-                            <InputRow label="Gas Company (Name, Address):" id="gas_company" />
-                             <InputRow label="Representative:" id="gas_rep" />
-                             <InputRow label="Tel:" id="gas_tel" />
-                            <InputRow label="Electric Co (Name, Address):" id="electric_company" />
-                             <InputRow label="Representative:" id="electric_rep" />
-                             <InputRow label="Tel:" id="electric_tel" />
-                            <InputRow label="Telephone Co (Name, Address):" id="tel_company" />
-                             <InputRow label="Representative:" id="tel_rep" />
-                             <InputRow label="Tel:" id="tel_tel" />
-                            <InputRow label="Sewers:" id="sewers" />
-                            <InputRow label="Water:" id="water" />
+                            <InputRow label="Gas Company (Name, Address):" id="gas_company" value={formData.gas_company} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="gas_rep" value={formData.gas_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="gas_tel" value={formData.gas_tel} onChange={handleChange}/>
+                            <InputRow label="Electric Co (Name, Address):" id="electric_company" value={formData.electric_company} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="electric_rep" value={formData.electric_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="electric_tel" value={formData.electric_tel} onChange={handleChange}/>
+                            <InputRow label="Telephone Co (Name, Address):" id="tel_company" value={formData.tel_company} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="tel_rep" value={formData.tel_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="tel_tel" value={formData.tel_tel} onChange={handleChange}/>
+                            <InputRow label="Sewers:" id="sewers" value={formData.sewers} onChange={handleChange}/>
+                            <InputRow label="Water:" id="water" value={formData.water} onChange={handleChange}/>
                         </Section>
 
                         <Section title="Financial Data">
                             <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Loan:</Label>
                                 <div className="flex-1 grid grid-cols-3 gap-2">
-                                    <Input name="loan_amount" placeholder="Amount" />
-                                    <Input name="loan_type" placeholder="Type" />
-                                    <Input name="loan_rate" placeholder="Rate" />
+                                    <Input name="loan_amount" placeholder="Amount" value={formData.loan_amount} onChange={handleChange}/>
+                                    <Input name="loan_type" placeholder="Type" value={formData.loan_type} onChange={handleChange}/>
+                                    <Input name="loan_rate" placeholder="Rate" value={formData.loan_rate} onChange={handleChange}/>
                                 </div>
                             </div>
-                             <InputRow label="Loan by:" id="loan_by" />
-                             <InputRow label="Representative:" id="loan_rep" />
-                             <InputRow label="Tel:" id="loan_tel" />
-                            <InputRow label="Bonds or Liens:" id="bonds_liens" />
+                             <InputRow label="Loan by:" id="loan_by" value={formData.loan_by} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="loan_rep" value={formData.loan_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="loan_tel" value={formData.loan_tel} onChange={handleChange}/>
+                            <InputRow label="Bonds or Liens:" id="bonds_liens" value={formData.bonds_liens} onChange={handleChange}/>
                             <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Grant:</Label>
                                 <div className="flex-1 grid grid-cols-2 gap-2">
-                                    <Input name="grant_amount" placeholder="Amount" />
-                                    <Input name="grant_limitations" placeholder="Limitations" />
+                                    <Input name="grant_amount" placeholder="Amount" value={formData.grant_amount} onChange={handleChange}/>
+                                    <Input name="grant_limitations" placeholder="Limitations" value={formData.grant_limitations} onChange={handleChange}/>
                                 </div>
                             </div>
-                             <InputRow label="Grant from:" id="grant_from" />
-                             <InputRow label="Representative:" id="grant_rep" />
-                             <InputRow label="Tel:" id="grant_tel" />
+                             <InputRow label="Grant from:" id="grant_from" value={formData.grant_from} onChange={handleChange}/>
+                             <InputRow label="Representative:" id="grant_rep" value={formData.grant_rep} onChange={handleChange}/>
+                             <InputRow label="Tel:" id="grant_tel" value={formData.grant_tel} onChange={handleChange}/>
                         </Section>
                         
                         <Section title="Method of Handling">
                              <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Contract Type:</Label>
                                 <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2"><input type="radio" id="single_contract" name="contract_type" value="single" /><Label htmlFor="single_contract">Single</Label></div>
-                                    <div className="flex items-center gap-2"><input type="radio" id="separate_contract" name="contract_type" value="separate" /><Label htmlFor="separate_contract">Separate</Label></div>
+                                    <div className="flex items-center gap-2"><input type="radio" id="single_contract" name="contract_type" value="single" checked={formData.contract_type === 'single'} onChange={handleChange} /><Label htmlFor="single_contract">Single</Label></div>
+                                    <div className="flex items-center gap-2"><input type="radio" id="separate_contract" name="contract_type" value="separate" checked={formData.contract_type === 'separate'} onChange={handleChange} /><Label htmlFor="separate_contract">Separate</Label></div>
                                 </div>
                             </div>
-                            <InputRow label="Negotiated:" id="negotiated" />
-                            <InputRow label="Bid:" id="bid" />
-                            <InputRow label="Stipulated Sum:" id="stipulated_sum" />
-                            <InputRow label="Cost Plus Fee:" id="cost_plus_fee" />
-                            <InputRow label="Force Amount:" id="force_amount" />
+                            <InputRow label="Negotiated:" id="negotiated" value={formData.negotiated} onChange={handleChange}/>
+                            <InputRow label="Bid:" id="bid" value={formData.bid} onChange={handleChange}/>
+                            <InputRow label="Stipulated Sum:" id="stipulated_sum" value={formData.stipulated_sum} onChange={handleChange}/>
+                            <InputRow label="Cost Plus Fee:" id="cost_plus_fee" value={formData.cost_plus_fee} onChange={handleChange}/>
+                            <InputRow label="Force Amount:" id="force_amount" value={formData.force_amount} onChange={handleChange}/>
                             <div className="flex items-center gap-4">
                                 <Label className="w-48 text-right">Equipment:</Label>
                                 <div className="flex-1 grid grid-cols-3 gap-2">
-                                    <Input name="equipment_fixed" placeholder="Fixed" />
-                                    <Input name="equipment_movable" placeholder="Movable" />
-                                    <Input name="equipment_interiors" placeholder="Interiors" />
+                                    <Input name="equipment_fixed" placeholder="Fixed" value={formData.equipment_fixed} onChange={handleChange}/>
+                                    <Input name="equipment_movable" placeholder="Movable" value={formData.equipment_movable} onChange={handleChange}/>
+                                    <Input name="equipment_interiors" placeholder="Interiors" value={formData.equipment_interiors} onChange={handleChange}/>
                                 </div>
                             </div>
-                            <InputRow label="Landscaping:" id="landscaping" />
+                            <InputRow label="Landscaping:" id="landscaping" value={formData.landscaping} onChange={handleChange}/>
                         </Section>
 
                         <Section title="Sketch of Property">
                              <div className="flex flex-col gap-2">
                                 <Label htmlFor="sketch_notes">Notations on existing improvements, disposal thereof, utilities, tree, etc.; indicated North; notations on other Project provision:</Label>
-                                <Textarea id="sketch_notes" name="sketch_notes" rows={5} />
+                                <Textarea id="sketch_notes" name="sketch_notes" rows={5} value={formData.sketch_notes} onChange={handleChange}/>
                             </div>
                         </Section>
 
@@ -377,5 +386,3 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
-    
