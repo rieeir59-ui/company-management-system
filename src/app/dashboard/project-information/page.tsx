@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,17 +9,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Save, Download } from 'lucide-react';
+import { Save, Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { useSearchParams } from 'next/navigation';
 
 interface jsPDFWithAutoTable extends jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -55,11 +56,15 @@ const residenceRequirements = [
   'Entertainment Area', 'Partio', 'Atrium'
 ];
 
-export default function ProjectInformationPage() {
+function ProjectInformationComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'project-information');
     const { toast } = useToast();
     const { firestore } = useFirebase();
     const { user: currentUser } = useCurrentUser();
+    const searchParams = useSearchParams();
+    const recordId = searchParams.get('id');
+
+    const [isLoading, setIsLoading] = useState(!!recordId);
 
     const [formState, setFormState] = useState({
         project: '',
@@ -142,6 +147,72 @@ export default function ProjectInformationPage() {
       }, {} as Record<string, { nos: string, remarks: string }>)
     );
 
+     useEffect(() => {
+        if (recordId && firestore) {
+            const fetchRecord = async () => {
+                setIsLoading(true);
+                try {
+                    const docRef = doc(firestore, 'savedRecords', recordId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const record = docSnap.data();
+                        
+                        const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items.reduce((acc: any, item: string) => {
+                            const [key, ...value] = item.split(':');
+                            acc[key.trim()] = value.join(':').trim();
+                            return acc;
+                        }, {}) || {};
+
+                        const loadedFormState: any = {};
+                        for (const key in formState) {
+                          const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                          if (mainData[formattedKey] !== undefined) {
+                            if (typeof formState[key as keyof typeof formState] === 'boolean') {
+                                loadedFormState[key] = mainData[formattedKey] === 'true';
+                            } else {
+                                loadedFormState[key] = mainData[formattedKey];
+                            }
+                          }
+                        }
+                        setFormState(s => ({...s, ...loadedFormState}));
+                        
+                        const loadedConsultants = JSON.parse(JSON.stringify(consultants));
+                        const consultantData = record.data.find((d: any) => d.category === 'Consultants')?.items || [];
+                        consultantData.forEach((item: string) => {
+                            const [key, ...value] = item.split(':');
+                            try {
+                                loadedConsultants[key.trim()] = JSON.parse(value.join(':').trim());
+                            } catch {}
+                        });
+                        setConsultants(loadedConsultants);
+
+                        const loadedRequirements = JSON.parse(JSON.stringify(requirements));
+                        const requirementsData = record.data.find((d: any) => d.category === 'Requirements')?.items || [];
+                        requirementsData.forEach((item: string) => {
+                            const [key, ...value] = item.split(':');
+                            try {
+                                loadedRequirements[key.trim()] = JSON.parse(value.join(':').trim());
+                            } catch {}
+                        });
+                        setRequirements(loadedRequirements);
+                        
+
+                    } else {
+                        toast({ variant: "destructive", title: "Error", description: "Record not found."});
+                    }
+                } catch (e) {
+                     toast({ variant: "destructive", title: "Error", description: "Failed to load record."});
+                     console.error("Error fetching document:", e);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchRecord();
+        } else {
+          setIsLoading(false);
+        }
+    }, [recordId, firestore, toast]);
+
     const handleRequirementChange = (item: string, field: 'nos' | 'remarks', value: string) => {
         setRequirements(prev => ({
             ...prev,
@@ -176,13 +247,11 @@ export default function ProjectInformationPage() {
         }
 
         const dataToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: "Project Information",
             projectName: formState.project || 'Untitled Project Information',
             data: [{
                 category: 'Project Information',
-                items: Object.entries(formState).map(([key, value]) => `${key}: ${value}`)
+                items: Object.entries(formState).map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`)
             }, {
                 category: 'Consultants',
                 items: Object.entries(consultants).map(([type, values]) => `${type}: ${JSON.stringify(values)}`)
@@ -191,184 +260,226 @@ export default function ProjectInformationPage() {
                 category: 'Requirements',
                 items: Object.entries(requirements).map(([req, values]) => `${req}: ${JSON.stringify(values)}`)
             }],
-            createdAt: serverTimestamp(),
         };
 
-        addDoc(collection(firestore, 'savedRecords'), dataToSave)
-            .then(() => {
-                toast({ title: 'Record Saved', description: "The project information has been saved." });
-            })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: `savedRecords`,
-                    operation: 'create',
-                    requestResourceData: dataToSave,
+        try {
+            if (recordId) {
+                const docRef = doc(firestore, 'savedRecords', recordId);
+                await updateDoc(docRef, {
+                    projectName: dataToSave.projectName,
+                    data: dataToSave.data,
                 });
-                errorEmitter.emit('permission-error', permissionError);
+                toast({ title: 'Record Updated', description: "The project information has been updated." });
+            } else {
+                await addDoc(collection(firestore, 'savedRecords'), {
+                    employeeId: currentUser.record,
+                    employeeName: currentUser.name,
+                    ...dataToSave,
+                    createdAt: serverTimestamp(),
+                });
+                toast({ title: 'Record Saved', description: "The project information has been saved." });
+            }
+        } catch (serverError) {
+             const permissionError = new FirestorePermissionError({
+                path: 'savedRecords',
+                operation: recordId ? 'update' : 'create',
+                requestResourceData: dataToSave,
             });
+            errorEmitter.emit('permission-error', permissionError);
+        }
     };
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 14;
         let yPos = 20;
+        
+        const primaryColor = [45, 95, 51];
+        const headingFillColor = [240, 240, 240];
 
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('PROJECT INFORMATION', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-        yPos += 15;
-
-        const addSection = (title: string, data: (string | null)[][]) => {
-            if (yPos > 260) { doc.addPage(); yPos = 20; }
-            doc.autoTable({
-                head: [[title]],
-                body: data.filter(row => row[1]),
-                startY: yPos,
-                theme: 'grid',
-                headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
-                columnStyles: { 0: { fontStyle: 'bold' } }
-            });
-            yPos = (doc as any).autoTable.previous.finalY + 10;
+        const addSectionTitle = (title: string) => {
+            if (yPos > pageHeight - margin - 20) { doc.addPage(); yPos = 20; }
+            doc.setLineWidth(0.5);
+            doc.setFillColor(headingFillColor[0], headingFillColor[1], headingFillColor[2]);
+            doc.rect(margin, yPos, pageWidth - margin * 2, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text(title, margin + 2, yPos + 5.5);
+            yPos += 8;
+            doc.setTextColor(0, 0, 0);
+        };
+        
+        const addKeyValuePair = (label: string, value: string) => {
+            if (!value) return;
+            if (yPos > pageHeight - margin - 15) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.text(label, margin, yPos);
+            doc.setFont('helvetica', 'normal');
+            const splitValue = doc.splitTextToSize(value, pageWidth - margin * 2 - 50);
+            doc.text(splitValue, margin + 60, yPos);
+            yPos += (splitValue.length * 4) + 4;
         };
 
-        const projectReqs = [
-            `Architectural Designing: ${formState.reqArchitectural ? '☑' : '☐'}`,
-            `Interior Decoration: ${formState.reqInterior ? '☑' : '☐'}`,
-            `Landscaping: ${formState.reqLandscaping ? '☑' : '☐'}`,
-            `Turnkey: ${formState.reqTurnkey ? '☑' : '☐'}`,
-            `Other: ${formState.reqOther ? `☑ ${formState.reqOtherText}` : '☐'}`
-        ].join('\n');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text('PROJECT INFORMATION', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 15;
+        doc.setTextColor(0, 0, 0);
 
-        addSection('Project Information', [
-            ['Project', formState.project],
-            ['Address', formState.address],
-            ['Project No', formState.projectNo],
-            ['Prepared By', formState.preparedBy],
-            ['Prepared Date', formState.preparedDate],
-        ]);
+        addKeyValuePair('Project:', formState.project);
+        addKeyValuePair('Address:', formState.address);
+        addKeyValuePair('Project No:', formState.projectNo);
+        addKeyValuePair('Prepared By:', formState.preparedBy);
+        addKeyValuePair('Prepared Date:', formState.preparedDate);
+        yPos += 5;
 
-        addSection('About Owner', [
-            ['Full Name', formState.ownerFullName],
-            ['Address (Office)', formState.ownerOfficeAddress],
-            ['Address (Res.)', formState.ownerResAddress],
-            ['Phone (Office)', formState.ownerOfficePhone],
-            ['Phone (Res.)', formState.ownerResPhone],
-        ]);
+        addSectionTitle("About Owner");
+        addKeyValuePair('Full Name:', formState.ownerFullName);
+        addKeyValuePair('Address (Office):', formState.ownerOfficeAddress);
+        addKeyValuePair('Address (Res.):', formState.ownerResAddress);
+        addKeyValuePair('Phone (Office):', formState.ownerOfficePhone);
+        addKeyValuePair('Phone (Res.):', formState.ownerResPhone);
+        yPos += 5;
 
-        addSection("Owner's Project Representative", [
-            ['Name', formState.repName],
-            ['Address (Office)', formState.repOfficeAddress],
-            ['Address (Res.)', formState.repResAddress],
-            ['Phone (Office)', formState.repOfficePhone],
-            ['Phone (Res.)', formState.repResPhone],
-        ]);
+        addSectionTitle("Owner's Project Representative");
+        addKeyValuePair('Name:', formState.repName);
+        addKeyValuePair('Address (Office):', formState.repOfficeAddress);
+        addKeyValuePair('Address (Res.):', formState.repResAddress);
+        addKeyValuePair('Phone (Office):', formState.repOfficePhone);
+        addKeyValuePair('Phone (Res.):', formState.repResPhone);
+        yPos += 5;
 
-        addSection('About Project', [
-            ['Address', formState.projectAboutAddress],
-            ['Project Reqt.', projectReqs]
-        ]);
+        addSectionTitle('About Project');
+        addKeyValuePair('Address:', formState.projectAboutAddress);
+        const reqs = [
+          formState.reqArchitectural && 'Architectural Designing',
+          formState.reqInterior && 'Interior Decoration',
+          formState.reqLandscaping && 'Landscaping',
+          formState.reqTurnkey && 'Turnkey',
+          formState.reqOther && `Other: ${formState.reqOtherText}`
+        ].filter(Boolean).join(', ');
+        addKeyValuePair('Project Reqt.:', reqs);
+        yPos += 5;
 
-        addSection('Project Details', [
-            ['Project Type', formState.projectType],
-            ['Project Status', formState.projectStatus],
-            ['Project Area', formState.projectArea],
-            ['Special Requirements', formState.specialRequirements]
-        ]);
+        addSectionTitle('Project Details');
+        addKeyValuePair('Project Type:', formState.projectType);
+        addKeyValuePair('Project Status:', formState.projectStatus);
+        addKeyValuePair('Project Area:', formState.projectArea);
+        addKeyValuePair('Special Requirements:', formState.specialRequirements);
+        yPos += 5;
 
-        addSection("Project's Cost", [
-            ['i. Architectural Designing', formState.costArchitectural],
-            ['ii. Interior Decoration', formState.costInterior],
-            ['iii. Landscaping', formState.costLandscaping],
-            ['iv. Construction', formState.costConstruction],
-            ['v. Turnkey', formState.costTurnkey],
-            ['vi. Other', formState.costOther],
-        ]);
+        addSectionTitle("Project's Cost");
+        addKeyValuePair('i. Architectural Designing:', formState.costArchitectural);
+        addKeyValuePair('ii. Interior Decoration:', formState.costInterior);
+        addKeyValuePair('iii. Landscaping:', formState.costLandscaping);
+        addKeyValuePair('iv. Construction:', formState.costConstruction);
+        addKeyValuePair('v. Turnkey:', formState.costTurnkey);
+        addKeyValuePair('vi. Other:', formState.costOther);
+        yPos += 5;
 
-        addSection('Dates Concerned with Project', [
-            ['First Information about Project', formState.dateFirstInfo],
-            ['First Meeting', formState.dateFirstMeeting],
-            ['First Working on Project', formState.dateFirstWorking],
-            ['First Proposal', `Start: ${formState.dateFirstProposalStart}, Completion: ${formState.dateFirstProposalEnd}`],
-            ['Second Proposal', `Start: ${formState.dateSecondProposalStart}, Completion: ${formState.dateSecondProposalEnd}`],
-            ['First Information', formState.dateFirstInfo2],
-            ['Working on Finalized Proposal', formState.dateWorkingFinalized],
-            ['Revised Presentation', formState.dateRevisedPresentation],
-            ['Quotation', formState.dateQuotation],
-            ['Drawings', `Start: ${formState.dateDrawingsStart}, Completion: ${formState.dateDrawingsEnd}`],
-            ['Other Major Projects Milestone Dates', formState.dateOtherMilestones],
-        ]);
+        addSectionTitle('Dates Concerned with Project');
+        addKeyValuePair('First Information about Project:', formState.dateFirstInfo);
+        addKeyValuePair('First Meeting:', formState.dateFirstMeeting);
+        addKeyValuePair('First Working on Project:', formState.dateFirstWorking);
+        addKeyValuePair('First Proposal:', `Start: ${formState.dateFirstProposalStart}, Completion: ${formState.dateFirstProposalEnd}`);
+        addKeyValuePair('Second Proposal:', `Start: ${formState.dateSecondProposalStart}, Completion: ${formState.dateSecondProposalEnd}`);
+        addKeyValuePair('First Information:', formState.dateFirstInfo2);
+        addKeyValuePair('Working on Finalized Proposal:', formState.dateWorkingFinalized);
+        addKeyValuePair('Revised Presentation:', formState.dateRevisedPresentation);
+        addKeyValuePair('Quotation:', formState.dateQuotation);
+        addKeyValuePair('Drawings:', `Start: ${formState.dateDrawingsStart}, Completion: ${formState.dateDrawingsEnd}`);
+        addKeyValuePair('Other Major Projects Milestone Dates:', formState.dateOtherMilestones);
+        yPos += 5;
 
-        addSection('Provided by Owner', [
-            ['Program', formState.ownerProgram],
-            ['Suggested Schedule', formState.ownerSchedule],
-            ['Legal Site Description & Other Concerned Documents', formState.ownerLegal],
-            ['Land Survey Report', formState.ownerLandSurvey],
-            ['Geo-Technical, Tests and Other Site Information', formState.ownerGeoTech],
-            ["Existing Structure's Drawings", formState.ownerExistingDrawings],
-        ]);
+        addSectionTitle('Provided by Owner');
+        addKeyValuePair('Program:', formState.ownerProgram);
+        addKeyValuePair('Suggested Schedule:', formState.ownerSchedule);
+        addKeyValuePair('Legal Site Description & Other Concerned Documents:', formState.ownerLegal);
+        addKeyValuePair('Land Survey Report:', formState.ownerLandSurvey);
+        addKeyValuePair('Geo-Technical, Tests and Other Site Information:', formState.ownerGeoTech);
+        addKeyValuePair("Existing Structure's Drawings:", formState.ownerExistingDrawings);
+        yPos += 5;
+
+        addSectionTitle('Compensation');
+        addKeyValuePair('Initial Payment:', formState.compInitialPayment);
+        addKeyValuePair('Basic Services (% of Cost of Construction):', formState.compBasicServices);
+        addKeyValuePair('Breakdown - Schematic Design (%):', formState.compSchematic);
+        addKeyValuePair('Breakdown - Design Development (%):', formState.compDesignDev);
+        addKeyValuePair("Breakdown - Construction Doc's (%):", formState.compConstructionDocs);
+        addKeyValuePair('Breakdown - Bidding / Negotiation (%):', formState.compBidding);
+        addKeyValuePair('Breakdown - Construction Contract Admin (%):', formState.compConstructionAdmin);
+        addKeyValuePair('Additional Services (Multiple of):', formState.compAdditionalServices);
+        addKeyValuePair('Reimbursable Expenses:', formState.compReimbursable);
+        addKeyValuePair('Other:', formState.compOther);
+        yPos += 5;
         
-        if (yPos > 200) doc.addPage();
-        yPos = doc.previousAutoTable.finalY ? doc.previousAutoTable.finalY + 10 : 20;
+        doc.addPage();
+        yPos = 20;
 
-        addSection('Compensation', [
-            ['Initial Payment', formState.compInitialPayment],
-            ['Basic Services (% of Cost of Construction)', formState.compBasicServices],
-            ['Breakdown - Schematic Design (%)', formState.compSchematic],
-            ['Breakdown - Design Development (%)', formState.compDesignDev],
-            ["Breakdown - Construction Doc's (%)", formState.compConstructionDocs],
-            ['Breakdown - Bidding / Negotiation (%)', formState.compBidding],
-            ['Breakdown - Construction Contract Admin (%)', formState.compConstructionAdmin],
-            ['Additional Services (Multiple of)', formState.compAdditionalServices],
-            ['Reimbursable Expenses', formState.compReimbursable],
-            ['Other', formState.compOther],
-        ]);
-
-        const consultantsBody = consultantTypes
-            .map(type => [
-                type,
-                consultants[type]?.withinFee || '',
-                consultants[type]?.additionalFee || '',
-                consultants[type]?.architect || '',
-                consultants[type]?.owner || '',
-            ])
-            .filter(row => row.slice(1).some(val => val && val !== '...')); // Filter out empty/default rows
+        addSectionTitle('Consultants');
+        const consultantsBody = consultantTypes.map(type => [
+            type,
+            consultants[type]?.withinFee || '',
+            consultants[type]?.additionalFee || '',
+            consultants[type]?.architect || '',
+            consultants[type]?.owner || '',
+        ]).filter(row => row.slice(1).some(val => val));
         
-        if (consultantsBody.length > 0) {
-            doc.autoTable({
-                head: [['Consultants', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
-                body: consultantsBody,
-                startY: yPos, theme: 'grid',
-                headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
-            });
-            yPos = (doc as any).autoTable.previous.finalY + 10;
+        doc.autoTable({
+            head: [['Type', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
+            body: consultantsBody,
+            startY: yPos, theme: 'grid',
+            headStyles: { fontStyle: 'bold', fillColor: headingFillColor, textColor: 0 },
+            styles: { fontSize: 8 },
+        });
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+        
+        addSectionTitle('Requirements - Residence');
+        const requirementsBody = residenceRequirements.map(req => [
+            req,
+            requirements[req].nos,
+            requirements[req].remarks,
+        ]).filter(row => row.slice(1).some(val => val));
+        
+        doc.autoTable({
+            head: [['Description', 'Nos.', 'Remarks']],
+            body: requirementsBody,
+            startY: yPos, theme: 'grid',
+            headStyles: { fontStyle: 'bold', fillColor: headingFillColor, textColor: 0 },
+            styles: { fontSize: 8 },
+        });
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+
+        addSectionTitle('Special Confidential Requirements');
+        addKeyValuePair('', formState.specialConfidential);
+        addSectionTitle('Miscellaneous Notes');
+        addKeyValuePair('', formState.miscNotes);
+
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
         }
 
-        if (yPos > 200) doc.addPage();
-        yPos = doc.previousAutoTable.finalY ? doc.previousAutoTable.finalY + 10 : 20;
-        
-        const requirementsBody = residenceRequirements
-            .map(req => [
-                req,
-                requirements[req]?.nos || '',
-                requirements[req]?.remarks || '',
-            ])
-            .filter(row => row[1] || row[2]);
-        
-        if (requirementsBody.length > 0) {
-            doc.autoTable({
-                head: [['Residence Requirements', 'Nos.', 'Remarks']],
-                body: requirementsBody,
-                startY: yPos, theme: 'grid',
-                headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
-            });
-            yPos = (doc as any).autoTable.previous.finalY + 10;
-        }
-
-        addSection('Special Confidential Requirements', [[formState.specialConfidential]]);
-        addSection('Miscellaneous Notes', [[formState.miscNotes]]);
-
-        doc.save('project-information.pdf');
+        doc.save(`${formState.project || 'project'}_information.pdf`);
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
     };
+    
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-4">Loading record...</span>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-8">
@@ -585,4 +696,12 @@ export default function ProjectInformationPage() {
             </Card>
         </div>
     );
+}
+
+export default function ProjectInformationPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-64">Loading...</div>}>
+            <ProjectInformationComponent />
+        </Suspense>
+    )
 }
