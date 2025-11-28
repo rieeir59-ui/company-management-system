@@ -121,6 +121,8 @@ export default function Page() {
 
   const handleDownloadPdf = () => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
+    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    const footerText = "Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522 , info@isbahhassan.com , www.isbahhassan.com";
     let y = 20;
 
     doc.setFontSize(12);
@@ -182,7 +184,7 @@ export default function Page() {
     y += descLines.length * 5 + 10;
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Proposed Adjustments', doc.internal.pageSize.width / 2, y, { align: 'center'});
+    doc.text('Proposed Adjustments', doc.internal.pageSize.getWidth() / 2, y, { align: 'center'});
     y += 5;
     doc.line(14, y, doc.internal.pageSize.width - 14, y);
     y += 10;
@@ -234,8 +236,13 @@ export default function Page() {
         ],
         styles: {cellPadding: 2, fontSize: 9}
     })
-    y = (doc as any).lastAutoTable.finalY + 5;
-
+    
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+    }
 
     doc.save('construction-change-directive.pdf');
     toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
@@ -355,6 +362,7 @@ export default function Page() {
     </div>
   );
 }
+
 
 
 
