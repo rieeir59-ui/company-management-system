@@ -133,12 +133,12 @@ interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
-const ChecklistItem = ({ item }: { item: { label: string; level: number } }) => {
-  const inputId = item.label.replace(/\s+/g, '-').toLowerCase();
+const ChecklistItem = ({ item, value, onChange }: { item: { label: string; level: number }, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
+  const inputId = item.label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
   return (
     <div className="grid grid-cols-2 items-center gap-4 py-2 border-b">
       <Label htmlFor={inputId} className="text-sm" style={{ paddingLeft: `${item.level * 1}rem` }}>{item.label}</Label>
-      <Input id={inputId} name={inputId} className="w-full h-8" />
+      <Input id={inputId} name={inputId} value={value} onChange={onChange} className="w-full h-8" />
     </div>
   );
 };
@@ -146,6 +146,22 @@ const ChecklistItem = ({ item }: { item: { label: string; level: number } }) => 
 
 export default function PredesignAssessmentPage() {
   const { toast } = useToast();
+  const [headerInfo, setHeaderInfo] = useState({
+    projectName: '',
+    architect: '',
+    projectNo: '',
+    projectDate: ''
+  });
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+
+  const handleHeaderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setHeaderInfo({ ...headerInfo, [e.target.name]: e.target.value });
+  };
+  
+  const handleItemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFormValues({ ...formValues, [e.target.name]: e.target.value });
+  };
+
 
   const handleSave = () => {
     toast({
@@ -158,65 +174,48 @@ export default function PredesignAssessmentPage() {
     const doc = new jsPDF() as jsPDFWithAutoTable;
     let yPos = 20;
 
-    const getInputValue = (id: string) => {
-        const element = document.getElementById(id) as HTMLInputElement;
-        return element ? element.value : '';
-    };
-    
-    // Header
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PREDESIGN ASSESSMENT', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+    yPos += 15;
+
     doc.setFontSize(10);
-    doc.text('Project:', 14, yPos);
-    doc.text(getInputValue('project-name'), 40, yPos);
-    doc.text('Architect:', 120, yPos);
-    doc.text(getInputValue('architect'), 145, yPos);
-    yPos += 5;
-    doc.text('(Name, Address)', 14, yPos);
-    yPos += 5;
-    doc.line(14, yPos, 100, yPos);
-    doc.text("Architects Project No:", 120, yPos);
-    doc.line(158, yPos, 196, yPos);
-    yPos += 5;
-    doc.line(14, yPos, 100, yPos);
-    doc.text("Project Date:", 120, yPos);
-    doc.line(145, yPos, 196, yPos);
-    yPos += 10;
-    doc.setLineWidth(1.5);
-    doc.line(10, yPos, 200, yPos);
-    yPos += 2;
-    doc.setLineWidth(0.2);
-
-
-    // Body
-    const humanFactors = factorsData.humanFactors.items.map(item => `${' '.repeat(item.level * 4)}${item.label}`).join('\n');
-    const physicalFactors = factorsData.physicalFactors.items.map(item => `${' '.repeat(item.level * 4)}${item.label}`).join('\n');
-    const externalFactors = factorsData.externalFactors.items.map(item => `${' '.repeat(item.level * 4)}${item.label}`).join('\n');
-
     doc.autoTable({
         startY: yPos,
-        head: [['Human Factors', 'Physical Factors', 'External Factors']],
+        theme: 'plain',
         body: [
-            [humanFactors, physicalFactors, externalFactors]
-        ],
-        theme: 'grid',
-        headStyles: {
-            fillColor: [255, 255, 255],
-            textColor: 0,
-            fontStyle: 'bold',
-            halign: 'left',
-            lineWidth: { top: 0, bottom: 0.5 },
-            lineColor: 0,
-        },
-        bodyStyles: {
-            valign: 'top',
-            fontSize: 9,
-            cellPadding: 2,
-        },
-        columnStyles: {
-            0: { cellWidth: 60 },
-            1: { cellWidth: 60 },
-            2: { cellWidth: 60 },
-        }
+            [`Project: ${headerInfo.projectName}`, `Architect: ${headerInfo.architect}`],
+            [`Architects Project No: ${headerInfo.projectNo}`, `Project Date: ${headerInfo.projectDate}`],
+        ]
     });
+    yPos = (doc as any).autoTable.previous.finalY + 10;
+    
+    Object.values(factorsData).forEach(factor => {
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(factor.title, 14, yPos);
+        yPos += 8;
+
+        const body = factor.items.map(item => {
+            const inputId = item.label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+            const value = formValues[inputId] || '';
+            return [item.label, value];
+        });
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Factor', 'Value']],
+            body: body,
+            theme: 'grid',
+            headStyles: { fillColor: [230, 230, 230], textColor: 0 },
+            styles: { fontSize: 9 },
+            columnStyles: { 0: { cellWidth: 80 } }
+        });
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+    });
+
 
     doc.save('predesign-assessment.pdf');
     toast({
@@ -236,19 +235,19 @@ export default function PredesignAssessmentPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <Label htmlFor="project-name" className="font-semibold">Project:</Label>
-                        <Input id="project-name" placeholder="(Name, Address)" />
+                        <Input id="project-name" name="projectName" placeholder="(Name, Address)" value={headerInfo.projectName} onChange={handleHeaderChange} />
                     </div>
                      <div>
                         <Label htmlFor="architect" className="font-semibold">Architect:</Label>
-                        <Input id="architect" />
+                        <Input id="architect" name="architect" value={headerInfo.architect} onChange={handleHeaderChange} />
                     </div>
                     <div>
                         <Label htmlFor="project-no" className="font-semibold">Architects Project No:</Label>
-                        <Input id="project-no" />
+                        <Input id="project-no" name="projectNo" value={headerInfo.projectNo} onChange={handleHeaderChange} />
                     </div>
                     <div>
                         <Label htmlFor="project-date" className="font-semibold">Project Date:</Label>
-                        <Input id="project-date" type="date" />
+                        <Input id="project-date" name="projectDate" type="date" value={headerInfo.projectDate} onChange={handleHeaderChange} />
                     </div>
                 </div>
             </div>
@@ -259,7 +258,7 @@ export default function PredesignAssessmentPage() {
                   <h2 className="font-bold text-center text-xl text-primary border-b pb-2 mb-4">{factor.title}</h2>
                   <div className="space-y-2">
                     {factor.items.map((item, index) => (
-                      <ChecklistItem key={index} item={item} />
+                      <ChecklistItem key={index} item={item} value={formValues[item.label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()] || ''} onChange={handleItemChange} />
                     ))}
                   </div>
                 </div>
