@@ -92,6 +92,8 @@ const RetainageForm = () => {
     };
     const handleDownload = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522 , info@isbahhassan.com , www.isbahhassan.com";
         let yPos = 20;
 
         const getVal = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '________________';
@@ -156,6 +158,13 @@ const RetainageForm = () => {
         doc.text(`Signature of Authorized Representative: ____________________`, 14, yPos);
         yPos += 10;
         doc.text(`Title: ____________________`, 14, yPos);
+
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
 
         doc.save('Consent-Retainage.pdf');
         toast({ title: 'Download Started', description: 'Consent for Retainage PDF is being generated.' });
@@ -239,7 +248,7 @@ const FinalPaymentForm = () => {
                 toast({ title: 'Record Saved', description: 'The final payment consent has been saved.' });
             })
             .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
+                 const permissionError = new FirestorePermissionError({
                     path: 'savedRecords',
                     operation: 'create',
                     requestResourceData: dataToSave,
@@ -250,6 +259,8 @@ const FinalPaymentForm = () => {
 
     const handleDownload = () => {
          const doc = new jsPDF() as jsPDFWithAutoTable;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522 , info@isbahhassan.com , www.isbahhassan.com";
         let yPos = 20;
 
         const getVal = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '________________';
@@ -311,6 +322,13 @@ const FinalPaymentForm = () => {
         doc.text(`Signature of Authorized Representative: ____________________`, 14, yPos);
         yPos += 10;
         doc.text(`Title: ____________________`, 14, yPos);
+
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
 
         doc.save('Consent-FinalPayment.pdf');
         toast({ title: 'Download Started', description: 'Consent for Final Payment PDF is being generated.' });
