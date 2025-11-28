@@ -21,7 +21,7 @@ import { useCurrentUser } from '@/context/UserContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 interface jsPDFWithAutoTable extends jsPDF {
-    autoTable: (options: any) => jsPDF;
+  autoTable: (options: any) => jsPDF;
 }
 
 const SectionTable = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -150,6 +150,13 @@ export default function ProjectDataPage() {
         const primaryColor = [45, 95, 51];
         const headingFillColor = [240, 240, 240];
 
+        // --- MAIN HEADING ---
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text('SITE SURVEY', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 15;
+
 
         const getInputValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.value || '';
         const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
@@ -212,21 +219,6 @@ export default function ProjectDataPage() {
             });
              yPos += 10;
         }
-
-        // --- HEADER ---
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text('IHA PROJECT MANAGEMENT', margin, yPos);
-        doc.text('Premises Review', pageWidth - margin, yPos, { align: 'right' });
-        yPos += 5;
-        doc.setFont('helvetica', 'normal');
-        doc.text('For Residential Project', pageWidth - margin, yPos, { align: 'right' });
-        yPos += 5;
-        doc.setFontSize(8);
-        doc.setTextColor(0, 0, 0);
-        doc.text('This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired', margin, yPos);
-        yPos += 10;
 
         // --- SECTIONS ---
         addSectionTitle('Location');
@@ -622,3 +614,7 @@ export default function ProjectDataPage() {
 
     
 
+
+
+
+    
