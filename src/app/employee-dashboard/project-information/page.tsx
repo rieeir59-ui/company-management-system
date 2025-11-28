@@ -36,7 +36,7 @@ const InputRow = ({ label, id, placeholder, type = 'text' }: { label: string; id
 
 
 export default function ProjectDataPage() {
-    const image = PlaceHolderImages.find(p => p.id === 'project-information');
+    const image = PlaceHolderImages.find(p => p.id === 'project-data');
     const { toast } = useToast();
 
     const handleSave = () => {
@@ -93,22 +93,6 @@ export default function ProjectDataPage() {
             doc.text(splitText, margin + 5, yPos);
             yPos += (splitText.length * 5) + 5;
         }
-
-        const addCheckboxLine = (label: string, isChecked: boolean, xOffset = 0, y: number) => {
-            const boxX = margin + 60 + xOffset;
-            doc.setFont('helvetica', 'normal');
-            doc.text(isChecked ? '☑' : '☐', boxX, y);
-            doc.text(label, boxX + 5, y);
-            return doc.getTextWidth(label) + 15;
-        };
-
-        const addRadioLine = (label: string, isChecked: boolean, xOffset = 0, y: number) => {
-            const circleX = margin + 60 + xOffset;
-            doc.setFont('helvetica', 'normal');
-            doc.text(isChecked ? '◉' : '○', circleX, y);
-            doc.text(label, circleX + 5, y);
-            return doc.getTextWidth(label) + 15;
-        };
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);

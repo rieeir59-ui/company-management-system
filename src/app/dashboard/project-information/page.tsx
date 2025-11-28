@@ -60,7 +60,6 @@ export default function ProjectDataPage() {
 
         const getInputValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.value || '';
         const getRadioValue = (name: string) => (form.elements.namedItem(name) as RadioNodeList)?.value || '';
-        const getCheckboxValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.checked || false;
         
         const addSectionTitle = (title: string) => {
             if (yPos > 260) { doc.addPage(); yPos = 20; }
@@ -78,7 +77,7 @@ export default function ProjectDataPage() {
             doc.setFontSize(10);
             doc.text(label, margin, yPos);
             doc.setFont('helvetica', 'normal');
-            const splitValue = doc.splitTextToSize(value, pageWidth - margin * 2 - 60);
+            const splitValue = doc.splitTextToSize(value, pageWidth - margin * 2 - 50);
             doc.text(splitValue, margin + 60, yPos);
             yPos += (splitValue.length * 5) + 2;
         };
@@ -93,22 +92,6 @@ export default function ProjectDataPage() {
             doc.text(splitText, margin + 5, yPos);
             yPos += (splitText.length * 5) + 5;
         }
-
-        const addCheckboxLine = (label: string, isChecked: boolean, xOffset = 0, y: number) => {
-            const boxX = margin + 60 + xOffset;
-            doc.setFont('helvetica', 'normal');
-            doc.text(isChecked ? '☑' : '☐', boxX, y);
-            doc.text(label, boxX + 5, y);
-            return doc.getTextWidth(label) + 15;
-        };
-
-        const addRadioLine = (label: string, isChecked: boolean, xOffset = 0, y: number) => {
-            const circleX = margin + 60 + xOffset;
-            doc.setFont('helvetica', 'normal');
-            doc.text(isChecked ? '◉' : '○', circleX, y);
-            doc.text(label, circleX + 5, y);
-            return doc.getTextWidth(label) + 15;
-        };
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
@@ -162,9 +145,6 @@ export default function ProjectDataPage() {
         addKeyValuePair('Attorney at Law:', getInputValue('attorney'));
         addKeyValuePair('Insurance Advisor:', getInputValue('insurance_advisor'));
         addKeyValuePair('Consultant on:', getInputValue('consultant_on'));
-        
-        doc.addPage();
-        yPos = 20;
 
         // --- Site Information Sources ---
         addSectionTitle("Site Information Sources");
