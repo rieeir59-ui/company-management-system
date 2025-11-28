@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -35,7 +36,7 @@ type RecordRow = {
   dateSent: string;
   numCopies: string;
   dateRetdReferred: string;
-  action: string;
+  action: string[];
   dateRetdAction: string;
   copiesTo: string[];
 };
@@ -43,7 +44,7 @@ type RecordRow = {
 const initialRow: Omit<RecordRow, 'id'> = {
   date: '', recordNo: '', specSectionNo: '', drawingNo: '', contractorSubcontractorTrade: '', 
   title: '', referredTo: '', dateSent: '', numCopies: '',
-  dateRetdReferred: '', action: '', dateRetdAction: '', copiesTo: []
+  dateRetdReferred: '', action: [], dateRetdAction: '', copiesTo: []
 };
 
 
@@ -69,9 +70,12 @@ export default function ShopDrawingsRecordPage() {
         setRows(rows.map(row => row.id === id ? { ...row, [field]: value } : row));
     };
     
-    const handleActionCheckboxChange = (id: number, value: string) => {
-        const currentAction = rows.find(row => row.id === id)?.action;
-        handleRowChange(id, 'action', currentAction === value ? '' : value);
+    const handleActionCheckboxChange = (id: number, value: string, checked: boolean) => {
+        const currentActions = rows.find(row => row.id === id)?.action || [];
+        const newActions = checked 
+            ? [...currentActions, value] 
+            : currentActions.filter(v => v !== value);
+        handleRowChange(id, 'action', newActions);
     };
 
     const handleCopiesCheckboxChange = (id: number, value: string) => {
@@ -154,10 +158,10 @@ export default function ShopDrawingsRecordPage() {
             row.dateSent,
             row.numCopies,
             row.dateRetdReferred,
-            row.action === 'approved' ? 'X' : '',
-            row.action === 'approved_as_noted' ? 'X' : '',
-            row.action === 'revise_resubmit' ? 'X' : '',
-            row.action === 'not_approved' ? 'X' : '',
+            row.action.includes('approved') ? 'X' : '',
+            row.action.includes('approved_as_noted') ? 'X' : '',
+            row.action.includes('revise_resubmit') ? 'X' : '',
+            row.action.includes('not_approved') ? 'X' : '',
             row.dateRetdAction,
             row.copiesTo.includes('Contractor') ? 'X' : '',
             row.copiesTo.includes('Owner') ? 'X' : '',
@@ -172,7 +176,7 @@ export default function ShopDrawingsRecordPage() {
             theme: 'grid',
             headStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold', halign: 'center', valign: 'middle' },
             styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
-             didParseCell: function (data) {
+            didParseCell: function (data) {
                 // Center align the 'X' marks
                 const checkboxColumns = [8, 9, 10, 11, 13, 14, 15, 16];
                 if (data.body && checkboxColumns.includes(data.column.index)) {
@@ -237,10 +241,10 @@ export default function ShopDrawingsRecordPage() {
                                  <div className="p-4 border rounded-md">
                                     <h4 className="font-semibold mb-2">Action</h4>
                                     <div className="flex flex-wrap gap-4 items-center">
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.action === 'approved'} onCheckedChange={() => handleActionCheckboxChange(row.id, 'approved')} /><Label>Approved</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.action === 'approved_as_noted'} onCheckedChange={() => handleActionCheckboxChange(row.id, 'approved_as_noted')} /><Label>App'd as Noted</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.action === 'revise_resubmit'} onCheckedChange={() => handleActionCheckboxChange(row.id, 'revise_resubmit')} /><Label>Revise & Resubmit</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.action === 'not_approved'} onCheckedChange={() => handleActionCheckboxChange(row.id, 'not_approved')} /><Label>Not Approved</Label></div>
+                                        <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('approved')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'approved', !!c)} /><Label>Approved</Label></div>
+                                        <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('approved_as_noted')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'approved_as_noted', !!c)} /><Label>App'd as Noted</Label></div>
+                                        <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('revise_resubmit')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'revise_resubmit', !!c)} /><Label>Revise & Resubmit</Label></div>
+                                        <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('not_approved')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'not_approved', !!c)} /><Label>Not Approved</Label></div>
                                         <div className="space-y-2 flex-1 min-w-[150px]"><Label className="sr-only">Date Ret'd Action</Label><Input type="date" value={row.dateRetdAction} onChange={e => handleRowChange(row.id, 'dateRetdAction', e.target.value)} /></div>
                                     </div>
                                 </div>
