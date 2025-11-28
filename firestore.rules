@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // USERS COLLECTION
+    match /users/{uid} {
+      allow read, write: if request.auth != null;
+    }
+
+    // SAVED RECORDS
+    match /savedRecords/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // UPLOADED FILES 
+    match /uploadedFiles/{fileId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // TASKS 
+    match /tasks/{taskId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

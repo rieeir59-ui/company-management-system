@@ -1,0 +1,280 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-architecture",
+      "description": "A modern architectural building at dusk, showcasing clean lines and warm lighting.",
+      "imageUrl": "https://images.unsplash.com/photo-1546349851-64285be8e9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBhcmNoaXRlY3R1cmV8ZW58MHx8fHwxNzYzNTczMzIxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern architecture"
+    },
+    {
+      "id": "avatar-1",
+      "description": "Placeholder for a female user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1633934214315-d1a99cc349d7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx3b21hbiUyMGZhY2V8ZW58MHx8fHwxNzYzNTg3NTg2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman face"
+    },
+    {
+      "id": "avatar-2",
+      "description": "Placeholder for a male user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtYW4lMjBmYWNlfGVufDB8fHx8MTc2MzU0MjQxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man face"
+    },
+    {
+      "id": "avatar-3",
+      "description": "Placeholder for another user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1548544149-4835e62ee5b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc2MzUyNTAyMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person face"
+    },
+    {
+      "id": "architects-instructions",
+      "description": "Architects reviewing blueprints.",
+      "imageUrl": "https://images.unsplash.com/photo-1599110906632-28d25094470f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhcmNoaXRlY3RzJTIwYmx1ZXByaW50c3xlbnwwfHx8fDE3NjM3MDkzMjh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "architects blueprints"
+    },
+    {
+      "id": "assign-task",
+      "description": "A person writing on a to-do list.",
+      "imageUrl": "https://images.unsplash.com/photo-1517048676732-d65bc937f952?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0YXNrJTIwYXNzaWdubWVudHxlbnwwfHx8fDE3NjQxMDQwODZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "task assignment"
+    },
+    {
+      "id": "bill-of-quantity",
+      "description": "A document with financial calculations.",
+      "imageUrl": "https://images.unsplash.com/photo-1758523418784-efcd168723c42?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxmaW5hbmNpYWwlMjBkb2N1bWVudHxlbnwwfHx8fDE3NjM2NjM0MTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "financial document"
+    },
+    {
+      "id": "change-order",
+      "description": "A document being signed.",
+      "imageUrl": "https://images.unsplash.com/photo-1681505531034-8d67054e07f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzaWduaW5nJTIwZG9jdW1lbnR8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "signing document"
+    },
+    {
+      "id": "consent-of-surety",
+      "description": "A handshake signifying agreement.",
+      "imageUrl": "https://images.unsplash.com/photo-1739285452621-59d92842fcc8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWdyZWVtZW50JTIwaGFuZHNoYWtlfGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "agreement handshake"
+    },
+    {
+      "id": "construction-change-director",
+      "description": "A construction site with a manager.",
+      "imageUrl": "https://images.unsplash.com/photo-1516216628859-9bccecab13ca?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjb25zdHJ1Y3Rpb24lMjBtYW5hZ2VyfGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "construction manager"
+    },
+    {
+      "id": "construction-schedule",
+      "description": "A calendar with marked dates.",
+      "imageUrl": "https://images.unsplash.com/photo-1761058556617-ddd0f3b9795e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c2NoZWR1bGUlMjBjYWxlbmRhcnxlbnwwfHx8fDE3NjM3MDkzMjh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "schedule calendar"
+    },
+    {
+      "id": "continuation-sheet",
+      "description": "An official document with many pages.",
+      "imageUrl": "https://images.unsplash.com/photo-1644329771977-0a8c6e3928ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxvZmZpY2lhbCUyMGRvY3VtZW50fGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "official document"
+    },
+    {
+      "id": "credentials",
+      "description": "A secure vault or lock.",
+      "imageUrl": "https://images.unsplash.com/photo-1634108947682-12a8ddfc9b61?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxzZWN1cml0eSUyMHZhdWx0fGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "security vault"
+    },
+    {
+      "id": "data-entry",
+      "description": "Someone typing on a keyboard.",
+      "imageUrl": "https://images.unsplash.com/photo-1654141448032-9da9d6d6abef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxrZXlib2FyZCUyMHR5cGluZ3xlbnwwfHx8fDE3NjM3MDkzMjh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "keyboard typing"
+    },
+    {
+      "id": "document-summarizer",
+      "description": "A magnifying glass over a document.",
+      "imageUrl": "https://images.unsplash.com/photo-1758876203026-99a024dc43b9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxkb2N1bWVudCUyMGFuYWx5c2lzfGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "document analysis"
+    },
+    {
+      "id": "drawings",
+      "description": "Architectural drawings and sketches.",
+      "imageUrl": "https://images.unsplash.com/photo-1717445130414-8fb934c38302?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhcmNoaXRlY3R1cmFsJTIwc2tldGNoZXN8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "architectural sketches"
+    },
+    {
+      "id": "employee-record",
+      "description": "A folder containing employee files.",
+      "imageUrl": "https://images.unsplash.com/photo-1645075994751-3c07ecdc2d5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxlbXBsb3llZSUyMGZpbGVzfGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "employee files"
+    },
+    {
+      "id": "field-reports-meetings",
+      "description": "A group of people in a meeting.",
+      "imageUrl": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxidXNpbmVzcyUyMG1lZXRpbmd8ZW58MHx8fHwxNzYzNjcyNjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business meeting"
+    },
+    {
+      "id": "instruction-sheet",
+      "description": "A checklist or set of instructions.",
+      "imageUrl": "https://images.unsplash.com/photo-1704390037907-dff6d2e353d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjaGVja2xpc3QlMjBpbnN0cnVjdGlvbnN8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "checklist instructions"
+    },
+    {
+      "id": "list-of-approved-vendors",
+      "description": "A list of approved company logos.",
+      "imageUrl": "https://images.unsplash.com/photo-1662052955098-042b46e60c2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjb21wYW55JTIwbG9nb3N8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "company logos"
+    },
+    {
+      "id": "list-of-contractors",
+      "description": "Construction workers at a site.",
+      "imageUrl": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjb25zdHJ1Y3Rpb24lMjB3b3JrZXJzfGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "construction workers"
+    },
+    {
+      "id": "list-of-sub-consultants",
+      "description": "A team of professionals collaborating.",
+      "imageUrl": "https://images.unsplash.com/photo-1568992687947-868a62a9f521?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjB0ZWFtfGVufDB8fHx8MTc2MzcwNDAzOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "professional team"
+    },
+    {
+      "id": "other-provisions",
+      "description": "A book of rules or laws.",
+      "imageUrl": "https://images.unsplash.com/photo-1447968954315-3f0c44f7313c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxsYXclMjBib29rfGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "law book"
+    },
+    {
+      "id": "payment-certificates",
+      "description": "A certificate with a seal of approval.",
+      "imageUrl": "https://images.unsplash.com/photo-1715173679369-18006e84d6a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjZXJ0aWZpY2F0ZSUyMHNlYWx8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "certificate seal"
+    },
+    {
+      "id": "predesign-assessment",
+      "description": "An early stage architectural sketch.",
+      "imageUrl": "https://images.unsplash.com/photo-1717445130414-8fb934c38302?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YXJjaGl0ZWN0dXJhbCUyMHNrZXRjaHxlbnwwfHx8fDE3NjM3MDQ3ODd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "architectural sketch"
+    },
+    {
+      "id": "preliminary-project-budget",
+      "description": "A budget plan with charts and graphs.",
+      "imageUrl": "https://images.unsplash.com/photo-1738737271801-d404a575d870?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxidWRnZXQlMjBjaGFydHN8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "budget charts"
+    },
+    {
+      "id": "project-agreement",
+      "description": "Signing a contract.",
+      "imageUrl": "https://images.unsplash.com/photo-1521791055366-0d553872125f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzaWduaW5nJTIwY29udHJhY3R8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "signing contract"
+    },
+    {
+      "id": "project-application-summary",
+      "description": "A summary document with key points highlighted.",
+      "imageUrl": "https://images.unsplash.com/photo-1731068305209-168e99ed4722?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzdW1tYXJ5JTIwZG9jdW1lbnR8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "summary document"
+    },
+    {
+      "id": "project-bylaws",
+      "description": "A formal document with rules.",
+      "imageUrl": "https://images.unsplash.com/photo-1759772238028-718e57eb31f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxydWxlcyUyMGRvY3VtZW50fGVufDB8fHx8MTc2MzcwOTMyOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "rules document"
+    },
+    {
+      "id": "project-chart-studio",
+      "description": "A screen showing data charts and graphs.",
+      "imageUrl": "https://images.unsplash.com/photo-1691643158804-d3f02eb456a3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxkYXRhJTIwY2hhcnRzfGVufDB8fHx8MTc2MzcwOTA3MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "data charts"
+    },
+    {
+      "id": "project-checklist",
+      "description": "A checklist on a clipboard.",
+      "imageUrl": "https://images.unsplash.com/photo-1712903276277-da92acd0cbf5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjbGlwYm9hcmQlMjBjaGVja2xpc3R8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "clipboard checklist"
+    },
+    {
+      "id": "project-data",
+      "description": "A dashboard with data visualizations.",
+      "imageUrl": "https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxkYXRhJTIwZGFzaGJvYXJkfGVufDB8fHx8MTc2MzY1NTU5NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "data dashboard"
+    },
+    {
+      "id": "project-information",
+      "description": "A folder with project files.",
+      "imageUrl": "https://images.unsplash.com/photo-1691458594782-2cef9a152bb3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwcm9qZWN0JTIwZmlsZXN8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "project files"
+    },
+    {
+      "id": "proposal-request",
+      "description": "A formal proposal document.",
+      "imageUrl": "https://images.unsplash.com/photo-1644329771977-0a8c6e3928ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwcm9wb3NhbCUyMGRvY3VtZW50fGVufDB8fHx8MTc2MzcwOTMyOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "proposal document"
+    },
+    {
+      "id": "rate-analysis",
+      "description": "Graphs showing financial analysis.",
+      "imageUrl": "https://images.unsplash.com/photo-1744473534558-efcd1664d14f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxmaW5hbmNpYWwlMjBncmFwaHN8ZW58MHx8fHwxNzYzNjQ1MzIwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "financial graphs"
+    },
+    {
+      "id": "requirement-performa",
+      "description": "A form to be filled out.",
+      "imageUrl": "https://images.unsplash.com/photo-1759752393975-7ca7b302fcc6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmb3JtJTIwZmlsbGluZ3xlbnwwfHx8fDE3NjM3MDkzMjh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "form filling"
+    },
+    {
+      "id": "saved-records",
+      "description": "A database icon.",
+      "imageUrl": "https://images.unsplash.com/photo-1670191835003-0e7e85b5f989?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkYXRhYmFzZSUyMGljb258ZW58MHx8fHwxNzYzNzA5MzI5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "database icon"
+    },
+    {
+      "id": "settings",
+      "description": "Gears and cogs representing settings.",
+      "imageUrl": "https://images.unsplash.com/photo-1708063785007-7c083832bb55?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzZXR0aW5ncyUyMGdlYXJzfGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "settings gears"
+    },
+    {
+      "id": "shop-drawings-record",
+      "description": "Detailed technical drawings.",
+      "imageUrl": "https://images.unsplash.com/photo-1649881927251-46644283751a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0ZWNobmljYWwlMjBkcmF3aW5nc3xlbnwwfHx8fDE3NjM3MDkzMjh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "technical drawings"
+    },
+    {
+      "id": "site-survey",
+      "description": "A surveyor using equipment on site.",
+      "imageUrl": "https://images.unsplash.com/photo-1601412835796-6392177b62ba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzdXJ2ZXlvciUyMGVxdWlwbWVudHxlbnwwfHx8fDE3NjM3MDkzMjh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "surveyor equipment"
+    },
+    {
+      "id": "substantial-summary",
+      "description": "A final report document.",
+      "imageUrl": "https://picsum.photos/seed/substantial-summary/1200/300",
+      "imageHint": "final report"
+    },
+    {
+      "id": "time-line-schedule",
+      "description": "A timeline graphic.",
+      "imageUrl": "https://images.unsplash.com/photo-1587400563263-e77a5590bfe7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx0aW1lbGluZSUyMGdyYXBoaWN8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "timeline graphic"
+    },
+    {
+      "id": "total-project-package",
+      "description": "A complete package of documents.",
+      "imageUrl": "https://images.unsplash.com/photo-1606295835125-2338079fdfc3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZG9jdW1lbnQlMjBwYWNrYWdlfGVufDB8fHx8MTc2MzcwOTMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "document package"
+    },
+    {
+      "id": "list-of-services",
+      "description": "A list of services offered.",
+      "imageUrl": "https://images.unsplash.com/photo-1763479169474-728a7de108c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzZXJ2aWNlcyUyMGxpc3R8ZW58MHx8fHwxNzYzNzA5MzI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "services list"
+    },
+    {
+      "id": "upload-files",
+      "description": "An upload cloud icon.",
+      "imageUrl": "https://images.unsplash.com/photo-1585432959445-38b02c17658a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx1cGxvYWQlMjBjbG91ZHxlbnwwfHx8fDE3NjQxMDQwODZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "upload cloud"
+    },
+    {
+      "id": "files-record",
+      "description": "A stack of organized files.",
+      "imageUrl": "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxmaWxlJTIwcmVjb3JkfGVufDB8fHx8MTc2NDEwNDA4Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "file record"
+    }
+  ]
+}

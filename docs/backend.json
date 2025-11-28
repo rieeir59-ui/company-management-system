@@ -1,0 +1,363 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the RI-HUB Management application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user (matches Firebase Auth UID)."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the company (e.g., Architect, Project Manager)."
+        },
+        "record": {
+            "type": "string",
+            "description": "The employee record ID (e.g., EMP-001)."
+        },
+        "department": {
+            "type": "string",
+            "description": "The department slug (e.g., software-engineer, admin)."
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "firstName",
+        "lastName",
+        "role",
+        "record",
+        "department"
+      ]
+    },
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents an architecture project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the project."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the project."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the project."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The start date of the project.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The end date of the project.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the project (e.g., Planning, In Progress, Completed)."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Project). Represents the project manager.",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "startDate",
+        "status",
+        "userId"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a task within a project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the task."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Task)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the task."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the task (e.g., To Do, In Progress, Completed)."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The due date of the task.",
+          "format": "date-time"
+        },
+        "assignedUserId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Task)"
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "name",
+        "description",
+        "status",
+        "dueDate"
+      ]
+    },
+    "LoginRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LoginRecord",
+      "type": "object",
+      "description": "Represents a user login record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the login record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N LoginRecord)"
+        },
+        "loginTime": {
+          "type": "string",
+          "description": "The date and time when the user logged in.",
+          "format": "date-time"
+        },
+        "logoutTime": {
+          "type": "string",
+          "description": "The date and time when the user logged out.",
+          "format": "date-time"
+        },
+        "ipAddress": {
+          "type": "string",
+          "description": "The IP address from which the user logged in."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "loginTime",
+        "ipAddress"
+      ]
+    },
+    "ContactMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ContactMessage",
+      "type": "object",
+      "description": "Represents a contact message submitted by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the contact message."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the person submitting the message."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the person submitting the message.",
+          "format": "email"
+        },
+        "message": {
+          "type": "string",
+          "description": "The message content."
+        },
+        "sentAt": {
+          "type": "string",
+          "description": "The date and time when the message was sent.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "message",
+        "sentAt"
+      ]
+    },
+    "UploadedFile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Uploaded File",
+      "type": "object",
+      "description": "Represents a file uploaded by a user.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the file." },
+        "category": { "type": "string", "description": "The category the file belongs to (e.g., Banks, Residential)." },
+        "customName": { "type": "string", "description": "User-defined name for the file." },
+        "originalName": { "type": "string", "description": "The original name of the uploaded file." },
+        "fileType": { "type": "string", "description": "MIME type of the file." },
+        "size": { "type": "number", "description": "File size in bytes." },
+        "fileUrl": { "type": "string", "description": "URL to the file in Firebase Storage." },
+        "employeeId": { "type": "string", "description": "Record ID of the employee who uploaded the file." },
+        "employeeName": { "type": "string", "description": "Name of the employee who uploaded the file." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the file was uploaded." }
+      },
+      "required": ["category", "customName", "originalName", "fileType", "size", "employeeId", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles.  Accessible only to the user themselves or admins.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Stores projects managed by each user. Accessible only to the project manager.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (project manager)."
+            },
+            {
+              "name": "projectId",
+              "description": "The unique identifier for the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/projects/{projectId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores tasks associated with a project. Accessible to the project manager and the assigned user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (project manager)."
+            },
+            {
+              "name": "projectId",
+              "description": "The unique identifier for the project."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique identifier for the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/login_records/{loginRecordId}",
+        "definition": {
+          "entityName": "LoginRecord",
+          "schema": {
+            "$ref": "#/backend/entities/LoginRecord"
+          },
+          "description": "Stores login records for each user.  Accessible only to the user themselves or admins.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "loginRecordId",
+              "description": "The unique identifier for the login record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/contact_messages/{contactMessageId}",
+        "definition": {
+          "entityName": "ContactMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ContactMessage"
+          },
+          "description": "Stores contact messages submitted by users. Publicly creatable, but only admins can read/manage.",
+          "params": [
+            {
+              "name": "contactMessageId",
+              "description": "The unique identifier for the contact message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/uploadedFiles/{fileId}",
+        "definition": {
+          "entityName": "UploadedFile",
+          "schema": {
+            "$ref": "#/backend/entities/UploadedFile"
+          },
+          "description": "Stores metadata for uploaded files. Creatable by any authenticated user for their own files. Readable by the owner or admins.",
+          "params": [
+            {
+              "name": "fileId",
+              "description": "The unique identifier for the file record."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to manage data for RI-HUB Management application, focusing on projects, tasks, user management and login records. The structure emphasizes authorization independence and simplicity for security rules by using path-based ownership for user-related data and segregation of concerns into distinct collections.\n\n1.  **Users:** User data is stored in `/users/{userId}`. This is the root for all user-owned data and enables straightforward security rules based on `request.auth.uid`.\n\n2.  **Projects:** Projects are stored under `/users/{userId}/projects/{projectId}`. This enforces that only the project manager (the user) can manage the projects.\n\n3.  **Tasks:** Tasks are nested under projects at `/users/{userId}/projects/{projectId}/tasks/{taskId}`. Access to tasks is controlled by the project manager (the user). The `assignedUserId` attribute within the task document allows for specifying who is responsible for completing the task. Security rules can ensure only the assigned user or the project manager can modify a task. This structure maintains hierarchical ownership, facilitating simple and secure access control.\n\n4.  **Login Records:** Login records are stored under `/users/{userId}/login_records/{loginRecordId}`. This is to ensure that only the user can access their login records.\n\n5. **Contact Messages:** Contact messages are stored in a separate collection `/contact_messages/{contactMessageId}`.  Given that these are public submissions, a dedicated collection simplifies access control. Rules can be configured to allow anyone to create (submit) a contact message, while only administrators (defined through a separate `/roles_admin/{uid}` collection) can read or manage them.\n\n6. **Uploaded Files:** A new collection `/uploadedFiles/{fileId}` is added to store metadata about uploaded files. Each document contains information like the file category, custom name, original name, size, type, and who uploaded it. Security rules will be configured to allow authenticated users to create documents in this collection, but only allow them to read/edit/delete their own file records, while admins have full access. This isolates file metadata from other user data and simplifies access control.\n\nThis structure achieves **Authorization Independence** by avoiding `get()` calls in security rules. Ownership is derived directly from the document path. For example, the rule to allow a user to update their own project would simply check if `request.auth.uid == userId` extracted from the path `/users/{userId}/projects/{projectId}`.\n\nThe structure supports secure `list` operations (QAPs) by segregating data with different access requirements into separate collections or subcollections.  Listing projects is limited to project managers. Listing tasks is limited to project managers. Public access data (contact messages) is stored separately."
+  }
+}
