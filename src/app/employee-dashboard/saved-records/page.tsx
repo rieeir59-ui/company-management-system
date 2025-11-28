@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useFirebase } from '@/firebase/provider';
-import { collection, query, where, getDocs, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc } from 'firebase/firestore';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, Loader2, Edit, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
@@ -18,13 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel"
 import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -82,7 +76,7 @@ const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
             doc.addPage();
             yPos = 20;
         }
-        
+
         const body: (string | number)[][] = [];
 
         if (section.items && Array.isArray(section.items)) {
@@ -90,6 +84,7 @@ const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
                 let parsedItem = {};
                 let isParsed = false;
                 try {
+                    // Handle cases where item is a JSON string
                     if (typeof item === 'string') {
                         parsedItem = JSON.parse(item);
                         isParsed = true;
@@ -224,6 +219,17 @@ export default function SavedRecordsPage() {
         }
     };
 
+    const groupedRecords = useMemo(() => {
+        return records.reduce((acc, record) => {
+            const fileName = record.fileName;
+            if (!acc[fileName]) {
+                acc[fileName] = [];
+            }
+            acc[fileName].push(record);
+            return acc;
+        }, {} as Record<string, SavedRecord[]>);
+    }, [records]);
+
 
     if (isLoading) {
         return (
@@ -243,75 +249,74 @@ export default function SavedRecordsPage() {
                     imageUrl={image?.imageUrl || ''}
                     imageHint={image?.imageHint || ''}
                 />
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>My Saved Records</CardTitle>
-                        <CardDescription>A list of all documents you have saved.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       {error ? (
-                            <div className="text-center py-12 text-destructive">
-                                <p>{error}</p>
-                            </div>
-                        ) : records.length === 0 ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                <p>You haven't saved any records yet. Save a document from another page to see it here.</p>
-                            </div>
-                        ) : (
-                             <Carousel
-                                opts={{
-                                    align: "start",
-                                }}
-                                className="w-full"
-                            >
-                                <CarouselContent>
-                                    {records.map(record => {
-                                        const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
-                                        return (
-                                            <CarouselItem key={record.id} className="md:basis-1/2 lg:basis-1/3">
-                                                <div className="p-1">
-                                                <Card className="flex flex-col h-full">
-                                                    <CardHeader>
-                                                        <CardTitle>{record.projectName}</CardTitle>
-                                                        <CardDescription>{record.fileName}</CardDescription>
-                                                    </CardHeader>
-                                                    <CardContent className="flex-grow">
-                                                        <div className="text-sm text-muted-foreground">
-                                                            Saved on: {record.createdAt.toDate().toLocaleDateString()}
-                                                        </div>
-                                                    </CardContent>
-                                                    <CardFooter className="flex-col items-stretch space-y-2">
-                                                        <div className="flex gap-2">
+                
+                 {error ? (
+                     <Card className="text-center py-12 bg-destructive/10 border-destructive">
+                        <CardHeader>
+                            <CardTitle className="text-destructive">Error</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-destructive/90">{error}</p>
+                        </CardContent>
+                    </Card>
+                ) : records.length === 0 ? (
+                   <Card className="text-center py-12">
+                        <CardHeader>
+                            <CardTitle>No Records Found</CardTitle>
+                            <CardDescription>You haven't saved any records yet. Save a document from another page to see it here.</CardDescription>
+                        </CardHeader>
+                    </Card>
+                ) : (
+                    <div className="space-y-8">
+                        {Object.entries(groupedRecords).map(([fileName, fileRecords]) => (
+                            <Card key={fileName}>
+                                <CardHeader>
+                                    <CardTitle>{fileName}</CardTitle>
+                                    <CardDescription>All records saved as "{fileName}".</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Project Name</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {fileRecords.map(record => {
+                                                const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
+                                                return (
+                                                    <TableRow key={record.id}>
+                                                        <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                        <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
+                                                        <TableCell className="flex gap-2 justify-end">
                                                             {formUrl && (
-                                                                <Button asChild className="flex-1">
+                                                                <Button asChild variant="ghost" size="icon">
                                                                     <Link href={`${formUrl}?id=${record.id}`}>
-                                                                        <Edit className="mr-2 h-4 w-4" /> Edit
+                                                                        <Edit className="h-4 w-4" />
                                                                     </Link>
                                                                 </Button>
                                                             )}
-                                                            <Button variant="destructive" size="icon" onClick={() => openDeleteDialog(record)}>
-                                                                <Trash2 className="h-4 w-4" />
+                                                            <Button variant="ghost" size="icon" onClick={() => handleDownload(record)}>
+                                                                <Download className="h-4 w-4" />
                                                             </Button>
-                                                        </div>
-                                                        <Button onClick={() => handleDownload(record)} variant="outline" className="w-full">
-                                                            <Download className="mr-2 h-4 w-4" />
-                                                            Download PDF
-                                                        </Button>
-                                                    </CardFooter>
-                                                </Card>
-                                                </div>
-                                            </CarouselItem>
-                                        )
-                                    })}
-                                </CarouselContent>
-                                <CarouselPrevious className="ml-12" />
-                                <CarouselNext className="mr-12" />
-                            </Carousel>
-                        )}
-                    </CardContent>
-                 </Card>
+                                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}>
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </div>
-             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -328,3 +333,5 @@ export default function SavedRecordsPage() {
         </>
     );
 }
+
+    
