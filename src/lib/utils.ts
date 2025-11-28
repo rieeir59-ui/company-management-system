@@ -6,6 +6,46 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export const allFileNames = [
+  "Architect's Supplemental Instructions",
+  "Bill of Quantity",
+  "Change Order",
+  "Consent of Surety (Retainage)",
+  "Consent of Surety (Final Payment)",
+  "Construction Change Directive",
+  "Construction Activity Schedule",
+  "Continuation Sheet",
+  "Drawings List",
+  "Instruction Sheet",
+  "List of Contractors",
+  "List of Sub-Consultants",
+  "Preliminary Project Budget",
+  "Project Agreement",
+  "Project Application Summary",
+  "Project Checklist",
+  "Project Data",
+  "Proposal Request",
+  "Rate Analysis",
+  "Shop Drawing and Sample Record",
+  "Timeline Schedule",
+  "Commercial Timeline",
+  "Residential Timeline",
+  "Askari Bank Timeline",
+  "Bank Alfalah Timeline",
+  "Bank Al Habib Timeline",
+  "CBD Timeline",
+  "DIB Timeline",
+  "FBL Timeline",
+  "HBL Timeline",
+  "MCB Timeline",
+  "UBL Timeline",
+  "My Projects",
+  "Task Assignment",
+  "Site Visit Proforma",
+  "Site Survey Report",
+  "Uploaded File"
+];
+
 const fileNameToUrlMap: Record<string, string> = {
   "Architect's Supplemental Instructions": "architects-instructions",
   "Bill of Quantity": "bill-of-quantity",

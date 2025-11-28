@@ -6,7 +6,7 @@ import { collection, query, orderBy, type Timestamp, FirestoreError, onSnapshot,
 import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, Loader2, Edit, Trash2 } from 'lucide-react';
@@ -24,7 +24,7 @@ import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
-import { getFormUrlFromFileName } from '@/lib/utils';
+import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -192,7 +192,7 @@ export default function SavedRecordsPage() {
     }, [firestore, auth, currentUser, isUserLoading]);
     
     const groupedRecords = useMemo(() => {
-        return records.reduce((acc, record) => {
+        const grouped = records.reduce((acc, record) => {
             const fileName = record.fileName;
             if (!acc[fileName]) {
                 acc[fileName] = [];
@@ -200,6 +200,15 @@ export default function SavedRecordsPage() {
             acc[fileName].push(record);
             return acc;
         }, {} as Record<string, SavedRecord[]>);
+
+        // Ensure all categories from allFileNames exist
+        allFileNames.forEach(name => {
+            if (!grouped[name]) {
+                grouped[name] = [];
+            }
+        });
+        
+        return grouped;
     }, [records]);
 
     const openDeleteDialog = (record: SavedRecord) => {
@@ -251,11 +260,6 @@ export default function SavedRecordsPage() {
                         <CardHeader><CardTitle className="text-destructive">Access Denied</CardTitle></CardHeader>
                         <CardContent><p className="text-destructive/90">{error}</p></CardContent>
                     </Card>
-                ) : records.length === 0 ? (
-                    <Card className="text-center py-12">
-                        <CardHeader><CardTitle>No Records Found</CardTitle></CardHeader>
-                        <CardContent><p className="text-muted-foreground">No employees have saved any records yet.</p></CardContent>
-                    </Card>
                 ) : (
                     <div className="space-y-8">
                         {Object.entries(groupedRecords).map(([fileName, fileRecords]) => (
@@ -265,43 +269,49 @@ export default function SavedRecordsPage() {
                                     <CardDescription>All records saved as "{fileName}".</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Employee Name</TableHead>
-                                                <TableHead>Project Name</TableHead>
-                                                <TableHead>Date</TableHead>
-                                                <TableHead className="text-right">Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {fileRecords.map(record => {
-                                                const formUrl = getFormUrlFromFileName(record.fileName, 'dashboard');
-                                                return (
-                                                    <TableRow key={record.id}>
-                                                        <TableCell>{record.employeeName}</TableCell>
-                                                        <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                        <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
-                                                        <TableCell className="flex gap-2 justify-end">
-                                                            {formUrl && (
-                                                                <Button asChild variant="ghost" size="icon">
-                                                                    <Link href={`${formUrl}?id=${record.id}`}>
-                                                                        <Edit className="h-4 w-4" />
-                                                                    </Link>
+                                    {fileRecords.length > 0 ? (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Employee Name</TableHead>
+                                                    <TableHead>Project Name</TableHead>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead className="text-right">Actions</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {fileRecords.map(record => {
+                                                    const formUrl = getFormUrlFromFileName(record.fileName, 'dashboard');
+                                                    return (
+                                                        <TableRow key={record.id}>
+                                                            <TableCell>{record.employeeName}</TableCell>
+                                                            <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                            <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
+                                                            <TableCell className="flex gap-2 justify-end">
+                                                                {formUrl && (
+                                                                    <Button asChild variant="ghost" size="icon">
+                                                                        <Link href={`${formUrl}?id=${record.id}`}>
+                                                                            <Edit className="h-4 w-4" />
+                                                                        </Link>
+                                                                    </Button>
+                                                                )}
+                                                                <Button variant="ghost" size="icon" onClick={() => handleDownload(record)}>
+                                                                    <Download className="h-4 w-4" />
                                                                 </Button>
-                                                            )}
-                                                            <Button variant="ghost" size="icon" onClick={() => handleDownload(record)}>
-                                                                <Download className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}>
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
+                                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}>
+                                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                                </Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+                                            </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <div className="text-center text-muted-foreground py-8">
+                                            No records found for this category.
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         ))}
@@ -325,4 +335,3 @@ export default function SavedRecordsPage() {
         </>
     );
 }
-    
