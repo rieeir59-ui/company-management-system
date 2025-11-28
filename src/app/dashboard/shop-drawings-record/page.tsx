@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -56,7 +57,7 @@ export default function ShopDrawingsRecordPage() {
     const [projectName, setProjectName] = useState('');
     const [architectsProjectNo, setArchitectsProjectNo] = useState('');
     const [contractor, setContractor] = useState('');
-    const [rows, setRows] = useState<RecordRow[]>([{ id: 1, ...initialRow }]);
+    const [rows, setRows] = useState<RecordRow[]>([]);
 
     const addRow = () => {
         setRows([...rows, { id: Date.now(), ...initialRow }]);
@@ -273,3 +274,5 @@ export default function ShopDrawingsRecordPage() {
         </div>
     );
 }
+
+    
