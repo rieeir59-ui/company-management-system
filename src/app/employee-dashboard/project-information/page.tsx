@@ -170,7 +170,7 @@ export default function ProjectInformationPage() {
     };
 
     const handleSave = async () => {
-         if (!firestore || !currentUser) {
+        if (!firestore || !currentUser) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return;
         }
@@ -209,10 +209,151 @@ export default function ProjectInformationPage() {
     };
 
     const handleDownloadPdf = () => {
-        toast({ title: 'Preparing PDF', description: 'Your PDF is being generated. Please use the browser\'s print dialog to "Save as PDF".' });
-        setTimeout(() => {
-            window.print();
-        }, 500);
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        let yPos = 20;
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PROJECT INFORMATION', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 15;
+
+        const addSection = (title: string, data: string[][]) => {
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+            doc.autoTable({
+                head: [[title]],
+                body: data,
+                startY: yPos,
+                theme: 'grid',
+                headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
+            });
+            yPos = (doc as any).autoTable.previous.finalY + 10;
+        };
+
+        addSection('Project Information', [
+            ['Project', formState.project],
+            ['Address', formState.address],
+            ['Project No', formState.projectNo],
+            ['Prepared By', formState.preparedBy],
+            ['Prepared Date', formState.preparedDate],
+        ]);
+        
+        addSection('About Owner', [
+            ['Full Name', formState.ownerFullName],
+            ['Address (Office)', formState.ownerOfficeAddress],
+            ['Address (Res.)', formState.ownerResAddress],
+            ['Phone (Office)', formState.ownerOfficePhone],
+            ['Phone (Res.)', formState.ownerResPhone],
+        ]);
+
+        addSection("Owner's Project Representative", [
+            ['Name', formState.repName],
+            ['Address (Office)', formState.repOfficeAddress],
+            ['Address (Res.)', formState.repResAddress],
+            ['Phone (Office)', formState.repOfficePhone],
+            ['Phone (Res.)', formState.repResPhone],
+        ]);
+
+        const projectReqs = [
+            `Architectural Designing: ${formState.reqArchitectural ? '☑' : '☐'}`,
+            `Interior Decoration: ${formState.reqInterior ? '☑' : '☐'}`,
+            `Landscaping: ${formState.reqLandscaping ? '☑' : '☐'}`,
+            `Turnkey: ${formState.reqTurnkey ? '☑' : '☐'}`,
+            `Other: ${formState.reqOther ? `☑ ${formState.reqOtherText}` : '☐'}`
+        ].join('\n');
+        addSection('About Project', [
+            ['Address', formState.projectAboutAddress],
+            ['Project Reqt.', projectReqs]
+        ]);
+
+        addSection('Project Details', [
+          ['Project Type', formState.projectType],
+          ['Project Status', formState.projectStatus],
+          ['Project Area', formState.projectArea],
+          ['Special Requirements', formState.specialRequirements]
+        ]);
+
+        addSection("Project's Cost", [
+          ['Architectural Designing', formState.costArchitectural],
+          ['Interior Decoration', formState.costInterior],
+          ['Landscaping', formState.costLandscaping],
+          ['Construction', formState.costConstruction],
+          ['Turnkey', formState.costTurnkey],
+          ['Other', formState.costOther],
+        ]);
+        
+        addSection('Dates Concerned with Project', [
+          ['First Information about Project', formState.dateFirstInfo],
+          ['First Meeting', formState.dateFirstMeeting],
+          ['First Working on Project', formState.dateFirstWorking],
+          ['First Proposal', `Start: ${formState.dateFirstProposalStart}, Completion: ${formState.dateFirstProposalEnd}`],
+          ['Second Proposal', `Start: ${formState.dateSecondProposalStart}, Completion: ${formState.dateSecondProposalEnd}`],
+          ['First Information', formState.dateFirstInfo2],
+          ['Working on Finalized Proposal', formState.dateWorkingFinalized],
+          ['Revised Presentation', formState.dateRevisedPresentation],
+          ['Quotation', formState.dateQuotation],
+          ['Drawings', `Start: ${formState.dateDrawingsStart}, Completion: ${formState.dateDrawingsEnd}`],
+          ['Other Major Projects Milestone Dates', formState.dateOtherMilestones],
+        ]);
+
+        addSection('Provided by Owner', [
+            ['Program', formState.ownerProgram],
+            ['Suggested Schedule', formState.ownerSchedule],
+            ['Legal Site Description & Other Concerned Documents', formState.ownerLegal],
+            ['Land Survey Report', formState.ownerLandSurvey],
+            ['Geo-Technical, Tests and Other Site Information', formState.ownerGeoTech],
+            ["Existing Structure's Drawings", formState.ownerExistingDrawings],
+        ]);
+
+        doc.addPage();
+        yPos = 20;
+
+        addSection('Compensation', [
+            ['Initial Payment', formState.compInitialPayment],
+            ['Basic Services (% of Cost of Construction)', formState.compBasicServices],
+            ['Breakdown - Schematic Design (%)', formState.compSchematic],
+            ['Breakdown - Design Development (%)', formState.compDesignDev],
+            ["Breakdown - Construction Doc's (%)", formState.compConstructionDocs],
+            ['Breakdown - Bidding / Negotiation (%)', formState.compBidding],
+            ['Breakdown - Construction Contract Admin (%)', formState.compConstructionAdmin],
+            ['Additional Services (Multiple of)', formState.compAdditionalServices],
+            ['Reimbursable Expenses', formState.compReimbursable],
+            ['Other', formState.compOther],
+        ]);
+
+        doc.autoTable({
+            head: [['Consultants', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
+            body: consultantTypes.map(type => [
+                type,
+                consultants[type]?.withinFee || '',
+                consultants[type]?.additionalFee || '',
+                consultants[type]?.architect || '',
+                consultants[type]?.owner || '',
+            ]),
+            startY: yPos, theme: 'grid',
+            headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
+        });
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+        
+        doc.addPage();
+        yPos = 20;
+        
+        doc.autoTable({
+            head: [['Residence Requirements', 'Nos.', 'Remarks']],
+            body: residenceRequirements.map(req => [
+                req,
+                requirements[req]?.nos || '',
+                requirements[req]?.remarks || '',
+            ]),
+            startY: yPos, theme: 'grid',
+            headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
+        });
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+
+        addSection('Special Confidential Requirements', [[formState.specialConfidential]]);
+        addSection('Miscellaneous Notes', [[formState.miscNotes]]);
+
+        doc.save('project-information.pdf');
+        toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
     };
 
     return (
