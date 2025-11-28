@@ -1,11 +1,10 @@
-
 'use client';
 
 import {
   Card,
   CardContent,
 } from '@/components/ui/card';
-import { Users, Briefcase, XCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Users, Briefcase, XCircle, Clock, CheckCircle2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEmployees } from '@/context/EmployeeContext';
 import { type Employee } from '@/lib/employees';
@@ -13,8 +12,21 @@ import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
 import { useFirebase } from '@/firebase/provider';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, deleteDoc, type Timestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const departments = [
     { name: 'ADMIN', slug: 'admin' },
@@ -26,6 +38,14 @@ const departments = [
     { name: 'FINANCE', slug: 'finance' },
     { name: 'QUANTITY MANAGEMENT', slug: 'quantity-management' },
 ];
+
+interface Task {
+  id: string;
+  taskName: string;
+  assignedTo: string;
+  assignedBy: string;
+  createdAt: Timestamp;
+}
 
 function EmployeeCard({ employee }: { employee: Employee }) {
     const { firestore, auth } = useFirebase();
@@ -105,10 +125,53 @@ function EmployeeCard({ employee }: { employee: Employee }) {
 }
 
 export default function AssignTaskPage() {
-    const { employeesByDepartment } = useEmployees();
+    const { employees, employeesByDepartment } = useEmployees();
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
+    const { firestore } = useFirebase();
+    const { toast } = useToast();
+
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+    useEffect(() => {
+        if (!firestore) return;
+
+        const q = query(collection(firestore, 'tasks'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+            setTasks(fetchedTasks);
+        });
+
+        return () => unsubscribe();
+    }, [firestore]);
+
+    const getEmployeeName = (recordId: string) => {
+        const employee = employees.find(e => e.record === recordId);
+        return employee?.name || recordId;
+    };
+    
+    const openDeleteDialog = (task: Task) => {
+        setTaskToDelete(task);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!taskToDelete || !firestore) return;
+
+        try {
+            await deleteDoc(doc(firestore, 'tasks', taskToDelete.id));
+            toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
+        } finally {
+            setIsDeleteDialogOpen(false);
+            setTaskToDelete(null);
+        }
+    };
     
     return (
+        <>
         <div className="space-y-8">
             <DashboardPageHeader
                 title="Assign Task"
@@ -132,6 +195,54 @@ export default function AssignTaskPage() {
                     </div>
                 )
             })}
+             <Card>
+                <CardHeader>
+                    <CardTitle>All Assigned Tasks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Task Name</TableHead>
+                                <TableHead>Assigned To</TableHead>
+                                <TableHead>Assigned By</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {tasks.map(task => (
+                                <TableRow key={task.id}>
+                                    <TableCell>{task.taskName}</TableCell>
+                                    <TableCell>{getEmployeeName(task.assignedTo)}</TableCell>
+                                    <TableCell>{task.assignedBy}</TableCell>
+                                    <TableCell>{task.createdAt?.toDate().toLocaleDateString()}</TableCell>
+                                    <TableCell>
+                                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will permanently delete the task "{taskToDelete?.taskName}". This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     );
 }
