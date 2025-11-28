@@ -6,10 +6,10 @@ import { collection, query, where, orderBy, type Timestamp, onSnapshot, Firestor
 import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Loader2, Edit, Trash2 } from 'lucide-react';
+import { Download, Loader2, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +27,9 @@ import Link from 'next/link';
 import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { cn } from '@/lib/utils';
+import { getIconForFile } from '@/lib/icons';
+
 
 type SavedRecordData = {
     category: string;
@@ -142,6 +145,7 @@ export default function SavedRecordsPage() {
     const [error, setError] = useState<string | null>(null);
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
      useEffect(() => {
         if (isUserLoading) {
@@ -266,59 +270,87 @@ export default function SavedRecordsPage() {
                             <p className="text-destructive/90">{error}</p>
                         </CardContent>
                     </Card>
+                 ) : selectedCategory ? (
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-4">
+                                <Button variant="outline" size="icon" onClick={() => setSelectedCategory(null)}>
+                                    <ArrowLeft className="h-4 w-4" />
+                                </Button>
+                                <div>
+                                    <CardTitle>{selectedCategory}</CardTitle>
+                                    <CardDescription>Your saved records for "{selectedCategory}".</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Project Name</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {groupedRecords[selectedCategory].length > 0 ? (
+                                        groupedRecords[selectedCategory].map(record => {
+                                            const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
+                                            return (
+                                                <TableRow key={record.id}>
+                                                    <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                    <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
+                                                    <TableCell className="flex gap-2 justify-end">
+                                                        {formUrl && (
+                                                            <Button asChild variant="ghost" size="icon">
+                                                                <Link href={`${formUrl}?id=${record.id}`}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Link>
+                                                            </Button>
+                                                        )}
+                                                        <Button variant="ghost" size="icon" onClick={() => handleDownload(record)}>
+                                                            <Download className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}>
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
+                                                No records found for this category.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 ) : (
-                    <div className="space-y-8">
-                        {Object.entries(groupedRecords).map(([fileName, fileRecords]) => (
-                            <Card key={fileName}>
-                                <CardHeader>
-                                    <CardTitle>{fileName}</CardTitle>
-                                    <CardDescription>Your saved records for "{fileName}".</CardDescription>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {Object.entries(groupedRecords).map(([fileName, fileRecords]) => {
+                           const Icon = getIconForFile(fileName);
+                           return (
+                            <Card 
+                                key={fileName} 
+                                className="flex flex-col justify-between cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all"
+                                onClick={() => setSelectedCategory(fileName)}
+                            >
+                                <CardHeader className="flex-row items-start gap-4 space-y-0 pb-2">
+                                   <div className="bg-primary/10 p-3 rounded-full">
+                                        <Icon className="h-6 w-6 text-primary" />
+                                   </div>
                                 </CardHeader>
                                 <CardContent>
-                                    {fileRecords.length > 0 ? (
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Project Name</TableHead>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead className="text-right">Actions</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {fileRecords.map(record => {
-                                                    const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
-                                                    return (
-                                                        <TableRow key={record.id}>
-                                                            <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                            <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
-                                                            <TableCell className="flex gap-2 justify-end">
-                                                                {formUrl && (
-                                                                    <Button asChild variant="ghost" size="icon">
-                                                                        <Link href={`${formUrl}?id=${record.id}`}>
-                                                                            <Edit className="h-4 w-4" />
-                                                                        </Link>
-                                                                    </Button>
-                                                                )}
-                                                                <Button variant="ghost" size="icon" onClick={() => handleDownload(record)}>
-                                                                    <Download className="h-4 w-4" />
-                                                                </Button>
-                                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}>
-                                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                                </Button>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })}
-                                            </TableBody>
-                                        </Table>
-                                    ) : (
-                                        <div className="text-center text-muted-foreground py-8">
-                                            No records found for this category.
-                                        </div>
-                                    )}
+                                    <CardTitle className="text-lg font-semibold">{fileName}</CardTitle>
+                                    <p className="text-sm text-muted-foreground">{fileRecords.length} record(s)</p>
                                 </CardContent>
                             </Card>
-                        ))}
+                           )
+                        })}
                     </div>
                 )}
             </div>
