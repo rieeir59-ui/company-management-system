@@ -44,6 +44,12 @@ const consultantTypes = [
     'Land Surveying', 'Geotechnical', 'Asbestos', 'Hazardous waste'
 ];
 
+const residenceRequirements = [
+  'Size of plot', 'Number of Bedrooms', 'Specifications', 'Number of Dressing Rooms', 
+  'Number of Bath Rooms', 'Living Rooms', 'Breakfast', 'Dinning', 'Servant Kitchen', 
+  'Self Kitchenett', 'Garage', 'Servant Quarters', 'Guard Room', 'Study Room', 'Stores', 
+  'Entertainment Area', 'Partio', 'Atrium'
+];
 
 export default function ProjectInformationPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-information');
@@ -125,6 +131,20 @@ export default function ProjectInformationPage() {
       }, {} as Record<string, { withinFee: string, additionalFee: string, architect: string, owner: string }>)
     );
 
+    const [requirements, setRequirements] = useState<Record<string, { nos: string, remarks: string }>>(
+      residenceRequirements.reduce((acc, req) => {
+        acc[req] = { nos: '', remarks: '' };
+        return acc;
+      }, {} as Record<string, { nos: string, remarks: string }>)
+    );
+
+    const handleRequirementChange = (item: string, field: 'nos' | 'remarks', value: string) => {
+        setRequirements(prev => ({
+            ...prev,
+            [item]: { ...prev[item], [field]: value }
+        }));
+    };
+
     const handleConsultantChange = (type: string, field: string, value: string) => {
         setConsultants(prev => ({
             ...prev,
@@ -162,6 +182,10 @@ export default function ProjectInformationPage() {
             }, {
                 category: 'Consultants',
                 items: Object.entries(consultants).map(([type, values]) => `${type}: ${JSON.stringify(values)}`)
+            },
+            {
+                category: 'Requirements',
+                items: Object.entries(requirements).map(([req, values]) => `${req}: ${JSON.stringify(values)}`)
             }],
             createdAt: serverTimestamp(),
         };
@@ -343,6 +367,39 @@ export default function ProjectInformationPage() {
         addLine('Reimbursable Expenses:', formState.compReimbursable);
         addLine('Other:', formState.compOther);
         yPos += 5;
+        
+        doc.addPage();
+        yPos = 20;
+        
+        addSectionTitle('Consultants:');
+        const consultantHead = [['Type', 'Within Basic Fee', 'Additional Fee', 'Architect', 'Owner']];
+        const consultantBody = Object.entries(consultants).map(([type, values]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]);
+        doc.autoTable({
+          head: consultantHead,
+          body: consultantBody,
+          startY: yPos,
+          theme: 'grid',
+        });
+        yPos = doc.autoTable.previous.finalY + 10;
+        
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        addSectionTitle('Requirements');
+        const reqHead = [['Residence', 'Nos.', 'Remarks']];
+        const reqBody = residenceRequirements.map((req, index) => [
+          `${index + 1}. ${req}`,
+          requirements[req].nos,
+          requirements[req].remarks
+        ]);
+        doc.autoTable({
+            head: reqHead,
+            body: reqBody,
+            startY: yPos,
+            theme: 'grid',
+        });
+        yPos = doc.autoTable.previous.finalY + 10;
+
+        doc.addPage();
+        yPos = 20;
 
         addSectionTitle('Special Confidential Requirements:');
         addTextArea('', formState.specialConfidential);
@@ -350,19 +407,6 @@ export default function ProjectInformationPage() {
         
         addSectionTitle('Miscellaneous Notes:');
         addTextArea('', formState.miscNotes);
-        
-        doc.addPage();
-        yPos = 20;
-        
-        addSectionTitle('Consultants:');
-        const head = [['Type', 'Within Basic Fee', 'Additional Fee', 'Architect', 'Owner']];
-        const body = Object.entries(consultants).map(([type, values]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]);
-        doc.autoTable({
-          head: head,
-          body: body,
-          startY: yPos,
-          theme: 'grid',
-        });
 
         doc.save('project-information.pdf');
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
@@ -538,6 +582,28 @@ export default function ProjectInformationPage() {
                                             <TableCell><Input value={consultants[type]?.additionalFee || ''} onChange={(e) => handleConsultantChange(type, 'additionalFee', e.target.value)} className="border-0 bg-transparent h-8 p-1" /></TableCell>
                                             <TableCell className="border-l"><Input value={consultants[type]?.architect || ''} onChange={(e) => handleConsultantChange(type, 'architect', e.target.value)} className="border-0 bg-transparent h-8 p-1" /></TableCell>
                                             <TableCell><Input value={consultants[type]?.owner || ''} onChange={(e) => handleConsultantChange(type, 'owner', e.target.value)} className="border-0 bg-transparent h-8 p-1" /></TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Section>
+
+                        <Section title="Requirements">
+                            <h3 className="font-semibold text-md mb-2">Residence:</h3>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[40%]">Description</TableHead>
+                                        <TableHead className="w-[20%]">Nos.</TableHead>
+                                        <TableHead className="w-[40%]">Remarks</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {residenceRequirements.map((req, index) => (
+                                        <TableRow key={req}>
+                                            <TableCell><Label>{`${index + 1}. ${req}`}</Label></TableCell>
+                                            <TableCell><Input value={requirements[req].nos} onChange={(e) => handleRequirementChange(req, 'nos', e.target.value)} /></TableCell>
+                                            <TableCell><Input value={requirements[req].remarks} onChange={(e) => handleRequirementChange(req, 'remarks', e.target.value)} /></TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
