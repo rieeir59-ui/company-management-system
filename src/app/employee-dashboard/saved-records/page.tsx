@@ -7,10 +7,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +28,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { cn } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/context/EmployeeContext';
 
@@ -46,7 +46,7 @@ type SavedRecord = {
     fileName: string;
     projectName: string;
     createdAt: Timestamp;
-    data: SavedRecordData[] | Record<string, any>;
+    data: SavedRecordData;
 };
 
 type TaskRecord = {
@@ -346,7 +346,7 @@ export default function SavedRecordsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                             <div className="border rounded-lg overflow-x-auto">
+                             <div className="border rounded-lg">
                                 {selectedCategory === 'Task Assignment' ? (
                                      <Table>
                                         <TableHeader>

@@ -341,7 +341,7 @@ export default function SavedRecordsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                             <div className="border rounded-lg overflow-x-auto">
+                             <div className="border rounded-lg">
                                 {selectedCategory === 'Task Assignment' ? (
                                     <Table>
                                         <TableHeader>
