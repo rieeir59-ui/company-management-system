@@ -14,8 +14,6 @@ import 'jspdf-autotable';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 const Section = ({ title, children, className }: { title?: string; children: React.ReactNode, className?: string }) => (
   <div className={`mb-6 ${className}`}>
@@ -51,7 +49,7 @@ export default function ProjectAgreementPage() {
     const [withholdingTax, setWithholdingTax] = useState('');
     const [finalCharges, setFinalCharges] = useState('');
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!firestore || !currentUser) {
             toast({
                 variant: 'destructive',
@@ -83,30 +81,28 @@ export default function ProjectAgreementPage() {
             }
         ];
 
-        const dataToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
-            fileName: 'Project Agreement',
-            projectName: designOf || 'Untitled Project',
-            data: recordData,
-            createdAt: serverTimestamp(),
-        };
-
-        addDoc(collection(firestore, 'savedRecords'), dataToSave)
-            .then(() => {
-                toast({
-                    title: "Record Saved",
-                    description: "The project agreement has been successfully saved.",
-                });
-            })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: 'savedRecords',
-                    operation: 'create',
-                    requestResourceData: dataToSave,
-                });
-                errorEmitter.emit('permission-error', permissionError);
+        try {
+            await addDoc(collection(firestore, 'savedRecords'), {
+                employeeId: currentUser.record,
+                employeeName: currentUser.name,
+                fileName: 'Project Agreement',
+                projectName: designOf || 'Untitled Project',
+                data: recordData,
+                createdAt: serverTimestamp(),
             });
+
+            toast({
+                title: "Record Saved",
+                description: "The project agreement has been successfully saved.",
+            });
+        } catch (error) {
+            console.error("Error saving record:", error);
+            toast({
+                variant: 'destructive',
+                title: "Save Failed",
+                description: "There was an error saving the project agreement.",
+            });
+        }
     }
 
     const handleDownloadPdf = () => {
@@ -498,7 +494,6 @@ export default function ProjectAgreementPage() {
 }
 
     
-
 
 
 

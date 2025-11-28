@@ -125,7 +125,7 @@ export default function ProjectAgreementPage() {
             doc.text(splitText, margin + indent, yPos);
             yPos += (splitText.length * (size / 2.5)) + spaceAfter;
         };
-
+        
         const addList = (items: string[], indent = 5) => {
             items.forEach(item => {
                 addText(`• ${item}`, false, indent, 10, 4);
@@ -495,3 +495,6 @@ export default function ProjectAgreementPage() {
 
     
 
+
+
+    
