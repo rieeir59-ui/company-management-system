@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -89,7 +90,8 @@ export default function ProjectDataPage() {
                 body: data,
                 theme: 'grid',
                 headStyles: { fillColor: [45, 95, 51] },
-                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 70 } },
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: '40%' }, 1: { cellWidth: 'auto' } },
+                margin: { left: margin, right: margin }
             });
             yPos = doc.autoTable.previous.finalY + 10;
         }
