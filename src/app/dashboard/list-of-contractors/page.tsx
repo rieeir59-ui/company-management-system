@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -72,6 +73,8 @@ export default function ListOfContractorsPage() {
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522 , info@isbahhassan.com , www.isbahhassan.com";
         let yPos = 20;
 
         doc.setFontSize(14);
@@ -111,6 +114,14 @@ export default function ListOfContractorsPage() {
             theme: 'grid',
             headStyles: { fillColor: [45, 95, 51] },
         });
+
+        // Add footer to all pages
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
 
         doc.save('list-of-contractors.pdf');
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
