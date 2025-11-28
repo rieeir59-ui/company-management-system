@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -286,7 +287,7 @@ function ProjectInformationComponent() {
     const handleDownload = () => {
         toast({
             title: "Preparing Download",
-            description: "Your PDF will be generated shortly. Please use the print dialog to 'Save as PDF'.",
+            description: "Your PDF will be generated shortly. Please use your browser's print dialog to 'Save as PDF'.",
         });
         setTimeout(() => window.print(), 500);
     };
@@ -526,5 +527,3 @@ export default function ProjectInformationPage() {
         </Suspense>
     )
 }
-
-    
