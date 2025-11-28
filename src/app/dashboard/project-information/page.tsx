@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -10,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Save, Download, Loader2 } from 'lucide-react';
+import { Save, Download, Loader2, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
@@ -139,7 +138,7 @@ function ProjectInformationComponent() {
       residenceRequirements.reduce((acc, req) => {
         acc[req] = { nos: '', remarks: '' };
         return acc;
-      }, {} as Record<string, { nos: string, remarks: string }>)
+      }, {} as Record<string, { nos: string, remarks: '' }>)
     );
 
      useEffect(() => {
@@ -289,7 +288,7 @@ function ProjectInformationComponent() {
             title: "Preparing Download",
             description: "Your PDF will be generated shortly. Please use the print dialog to 'Save as PDF'.",
         });
-        window.print();
+        setTimeout(() => window.print(), 500);
     };
     
     if (isLoading) {
@@ -303,12 +302,14 @@ function ProjectInformationComponent() {
 
     return (
         <div className="space-y-8">
-            <DashboardPageHeader
-                title="Project Information"
-                description="Enter all the necessary details for your project."
-                imageUrl={image?.imageUrl || ''}
-                imageHint={image?.imageHint || ''}
-            />
+            <div className="no-print">
+              <DashboardPageHeader
+                  title="Project Information"
+                  description="Enter all the necessary details for your project."
+                  imageUrl={image?.imageUrl || ''}
+                  imageHint={image?.imageHint || ''}
+              />
+            </div>
             <Card className="printable-area">
                 <CardHeader>
                     <CardTitle className="text-center font-headline text-3xl text-primary">PROJECT INFORMATION</CardTitle>
@@ -509,7 +510,7 @@ function ProjectInformationComponent() {
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
                             <Button type="button" onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                            <Button type="button" onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                            <Button type="button" onClick={handleDownload}><Printer className="mr-2 h-4 w-4" /> Download/Print PDF</Button>
                         </div>
                     </form>
                 </CardContent>
@@ -525,3 +526,5 @@ export default function ProjectInformationPage() {
         </Suspense>
     )
 }
+
+    
