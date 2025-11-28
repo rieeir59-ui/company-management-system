@@ -41,6 +41,8 @@ export default function TransmittalLetterPage() {
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF();
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522 , info@isbahhassan.com , www.isbahhassan.com";
         let yPos = 20;
 
         const getVal = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '';
@@ -157,7 +159,7 @@ export default function TransmittalLetterPage() {
         const head = [['Copies', 'Date', 'Rev. No.', 'Description', 'Action Code']];
         const body = items.map(item => [item.copies, item.date, item.revNo, item.description, item.actionCode]);
         (doc as any).autoTable({ head, body, startY: yPos, theme: 'striped' });
-        yPos = (doc as any).lastAutoTable.previous.finalY + 10;
+        yPos = (doc as any).lastAutoTable.finalY + 10;
         
         doc.text("Action Code:", 14, yPos);
         yPos += 5;
@@ -171,7 +173,7 @@ export default function TransmittalLetterPage() {
             ],
             styles: { fontSize: 8 },
         });
-        yPos = (doc as any).lastAutoTable.previous.finalY + 10;
+        yPos = (doc as any).lastAutoTable.finalY + 10;
         
         doc.text("Remarks:", 14, yPos);
         yPos += 5;
@@ -182,6 +184,13 @@ export default function TransmittalLetterPage() {
         yPos += 15;
         doc.text(`Received By: ____________________`, 14, yPos);
         
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
+
         doc.save('transmittal-letter.pdf');
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
     };

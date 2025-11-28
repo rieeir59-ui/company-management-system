@@ -41,12 +41,14 @@ export default function TransmittalLetterPage() {
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF();
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522 , info@isbahhassan.com , www.isbahhassan.com";
         let yPos = 20;
 
         const getVal = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '';
         const getChecked = (id: string) => (document.getElementById(id) as HTMLInputElement)?.checked;
         const getRadio = (name: string) => (document.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || '';
-        
+
         const drawCheckbox = (x: number, y: number, checked: boolean) => {
             doc.setLineWidth(0.2);
             doc.rect(x, y - 3, 3.5, 3.5);
@@ -63,7 +65,6 @@ export default function TransmittalLetterPage() {
                 doc.circle(x + 1.75, y - 1.75, 1, 'F');
             }
         };
-
 
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -183,6 +184,13 @@ export default function TransmittalLetterPage() {
         yPos += 15;
         doc.text(`Received By: ____________________`, 14, yPos);
         
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
+
         doc.save('transmittal-letter.pdf');
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
     };
