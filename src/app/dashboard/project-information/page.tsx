@@ -19,6 +19,7 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 const Section = ({ title, children, className }: { title: string; children: React.ReactNode, className?: string }) => (
     <div className={`mb-6 pt-4 border-t border-dashed ${className}`}>
@@ -35,6 +36,13 @@ const InputRow = ({ label, id, value, onChange, placeholder = '', type = 'text' 
         <Input id={id} name={id} value={value} onChange={onChange} placeholder={placeholder} type={type} className="md:col-span-2" />
     </div>
 );
+
+const consultantTypes = [
+    'Structural', 'HVAC', 'Plumbing', 'Electrical', 'Civil', 'Landscape', 'Interior', 'Graphics',
+    'Lighting', 'Acoustical', 'Fire Protection', 'Food Service', 'Vertical transport',
+    'Display/Exhibit', 'Master planning', 'Solar', 'Construction Cost', 'Other', '',
+    'Land Surveying', 'Geotechnical', 'Asbestos', 'Hazardous waste'
+];
 
 
 export default function ProjectInformationPage() {
@@ -109,6 +117,20 @@ export default function ProjectInformationPage() {
         specialConfidential: '',
         miscNotes: '',
     });
+    
+    const [consultants, setConsultants] = useState<Record<string, { withinFee: string, additionalFee: string, architect: string, owner: string }>>(
+      consultantTypes.reduce((acc, type) => {
+        acc[type] = { withinFee: '...', additionalFee: '...', architect: '...', owner: '...' };
+        return acc;
+      }, {} as Record<string, { withinFee: string, additionalFee: string, architect: string, owner: string }>)
+    );
+
+    const handleConsultantChange = (type: string, field: string, value: string) => {
+        setConsultants(prev => ({
+            ...prev,
+            [type]: { ...prev[type], [field]: value }
+        }));
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -137,6 +159,9 @@ export default function ProjectInformationPage() {
             data: [{
                 category: 'Project Information',
                 items: Object.entries(formState).map(([key, value]) => `${key}: ${value}`)
+            }, {
+                category: 'Consultants',
+                items: Object.entries(consultants).map(([type, values]) => `${type}: ${JSON.stringify(values)}`)
             }],
             createdAt: serverTimestamp(),
         };
@@ -325,6 +350,19 @@ export default function ProjectInformationPage() {
         
         addSectionTitle('Miscellaneous Notes:');
         addTextArea('', formState.miscNotes);
+        
+        doc.addPage();
+        yPos = 20;
+        
+        addSectionTitle('Consultants:');
+        const head = [['Type', 'Within Basic Fee', 'Additional Fee', 'Architect', 'Owner']];
+        const body = Object.entries(consultants).map(([type, values]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]);
+        doc.autoTable({
+          head: head,
+          body: body,
+          startY: yPos,
+          theme: 'grid',
+        });
 
         doc.save('project-information.pdf');
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
@@ -451,12 +489,12 @@ export default function ProjectInformationPage() {
                         </Section>
                         
                         <Section title="Provided by Owner">
-                          <InputRow label="Program:" id="ownerProgram" value={formState.ownerProgram} onChange={handleChange} />
-                          <InputRow label="Suggested Schedule:" id="ownerSchedule" value={formState.ownerSchedule} onChange={handleChange} />
-                          <InputRow label="Legal Site Description & Other Concerned Documents:" id="ownerLegal" value={formState.ownerLegal} onChange={handleChange} />
-                          <InputRow label="Land Survey Report:" id="ownerLandSurvey" value={formState.ownerLandSurvey} onChange={handleChange} />
-                          <InputRow label="Geo-Technical, Tests and Other Site Information:" id="ownerGeoTech" value={formState.ownerGeoTech} onChange={handleChange} />
-                          <InputRow label="Existing Structure's Drawings:" id="ownerExistingDrawings" value={formState.ownerExistingDrawings} onChange={handleChange} />
+                           <div className="space-y-2"><Label htmlFor="ownerProgram">Program:</Label><Textarea id="ownerProgram" name="ownerProgram" value={formState.ownerProgram} onChange={handleChange} /></div>
+                           <div className="space-y-2"><Label htmlFor="ownerSchedule">Suggested Schedule:</Label><Textarea id="ownerSchedule" name="ownerSchedule" value={formState.ownerSchedule} onChange={handleChange} /></div>
+                           <div className="space-y-2"><Label htmlFor="ownerLegal">Legal Site Description & Other Concerned Documents:</Label><Textarea id="ownerLegal" name="ownerLegal" value={formState.ownerLegal} onChange={handleChange} /></div>
+                           <div className="space-y-2"><Label htmlFor="ownerLandSurvey">Land Survey Report:</Label><Textarea id="ownerLandSurvey" name="ownerLandSurvey" value={formState.ownerLandSurvey} onChange={handleChange} /></div>
+                           <div className="space-y-2"><Label htmlFor="ownerGeoTech">Geo-Technical, Tests and Other Site Information:</Label><Textarea id="ownerGeoTech" name="ownerGeoTech" value={formState.ownerGeoTech} onChange={handleChange} /></div>
+                           <div className="space-y-2"><Label htmlFor="ownerExistingDrawings">Existing Structure's Drawings:</Label><Textarea id="ownerExistingDrawings" name="ownerExistingDrawings" value={formState.ownerExistingDrawings} onChange={handleChange} /></div>
                         </Section>
 
                         <Section title="Compensation">
@@ -465,16 +503,45 @@ export default function ProjectInformationPage() {
                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
                             <Label className="md:text-right font-bold">Breakdown by Phase:</Label>
                             <div className="md:col-span-2 space-y-2">
-                              <InputRow label="Schematic Design:" id="compSchematic" value={formState.compSchematic} onChange={handleChange} />
-                              <InputRow label="Design Development:" id="compDesignDev" value={formState.compDesignDev} onChange={handleChange} />
-                              <InputRow label="Construction Doc's:" id="compConstructionDocs" value={formState.compConstructionDocs} onChange={handleChange} />
-                              <InputRow label="Bidding / Negotiation:" id="compBidding" value={formState.compBidding} onChange={handleChange} />
-                              <InputRow label="Construction Contract Admin:" id="compConstructionAdmin" value={formState.compConstructionAdmin} onChange={handleChange} />
+                              <InputRow label="Schematic Design (%):" id="compSchematic" value={formState.compSchematic} onChange={handleChange} />
+                              <InputRow label="Design Development (%):" id="compDesignDev" value={formState.compDesignDev} onChange={handleChange} />
+                              <InputRow label="Construction Doc's (%):" id="compConstructionDocs" value={formState.compConstructionDocs} onChange={handleChange} />
+                              <InputRow label="Bidding / Negotiation (%):" id="compBidding" value={formState.compBidding} onChange={handleChange} />
+                              <InputRow label="Construction Contract Admin (%):" id="compConstructionAdmin" value={formState.compConstructionAdmin} onChange={handleChange} />
                             </div>
                            </div>
-                           <InputRow label="Additional Services (Multiple of Times Direct Cost to Architect):" id="compAdditionalServices" value={formState.compAdditionalServices} onChange={handleChange} />
+                           <InputRow label="Additional Services (Multiple of):" id="compAdditionalServices" value={formState.compAdditionalServices} onChange={handleChange} />
                            <InputRow label="Reimbursable Expenses:" id="compReimbursable" value={formState.compReimbursable} onChange={handleChange} />
                            <InputRow label="Other:" id="compOther" value={formState.compOther} onChange={handleChange} />
+                        </Section>
+                        
+                        <Section title="Consultants:">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead rowSpan={2} className="align-bottom">Type</TableHead>
+                                        <TableHead colSpan={2} className="text-center border-l">Retained by Architect</TableHead>
+                                        <TableHead colSpan={2} className="text-center border-l">Retained and Paid by Owner, Co-ordination By</TableHead>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableHead className="border-l">Within Basic Fee</TableHead>
+                                        <TableHead>Additional Fee</TableHead>
+                                        <TableHead className="border-l">Architect</TableHead>
+                                        <TableHead>Owner</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {consultantTypes.map((type, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell className={!type ? 'bg-muted' : ''}>{type}</TableCell>
+                                            <TableCell className="border-l"><Input value={consultants[type]?.withinFee || ''} onChange={(e) => handleConsultantChange(type, 'withinFee', e.target.value)} className="border-0 bg-transparent h-8 p-1" /></TableCell>
+                                            <TableCell><Input value={consultants[type]?.additionalFee || ''} onChange={(e) => handleConsultantChange(type, 'additionalFee', e.target.value)} className="border-0 bg-transparent h-8 p-1" /></TableCell>
+                                            <TableCell className="border-l"><Input value={consultants[type]?.architect || ''} onChange={(e) => handleConsultantChange(type, 'architect', e.target.value)} className="border-0 bg-transparent h-8 p-1" /></TableCell>
+                                            <TableCell><Input value={consultants[type]?.owner || ''} onChange={(e) => handleConsultantChange(type, 'owner', e.target.value)} className="border-0 bg-transparent h-8 p-1" /></TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </Section>
 
                         <Section title="Special Confidential Requirements">
