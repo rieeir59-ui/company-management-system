@@ -207,209 +207,143 @@ export default function ProjectInformationPage() {
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as any;
         let yPos = 20;
-        const margin = 14;
-        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
 
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        doc.text('PROJECT INFORMATION', pageWidth / 2, yPos, { align: 'center' });
+        doc.text('PROJECT INFORMATION', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
         yPos += 15;
 
-        const addLine = (label: string, value: string) => {
-            if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text(label, margin, yPos);
-            doc.setFont('helvetica', 'normal');
-            const splitValue = doc.splitTextToSize(value, pageWidth - margin * 2 - 50);
-            doc.text(splitValue, margin + 60, yPos, { maxWidth: pageWidth - margin * 2 - 60 });
-            yPos += (splitValue.length * 5) + 3;
-        };
-        
-        const addTextArea = (label: string, value: string) => {
-             if (yPos > 260) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.text(label, margin, yPos);
-            yPos += 7;
-            doc.setFont('helvetica', 'normal');
-            const splitText = doc.splitTextToSize(value, pageWidth - margin * 2 - 5);
-            doc.text(splitText, margin + 5, yPos);
-            yPos += (splitText.length * 5) + 5;
-        }
-
-        const addRadioLine = (label: string, options: string[], selectedValue: string) => {
-            if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text(label, margin, yPos);
-            doc.setFont('helvetica', 'normal');
-            let xPos = margin + 60;
-            options.forEach(opt => {
-                const radioChar = opt.toLowerCase() === selectedValue ? '◉' : '○';
-                doc.text(`${radioChar} ${opt}`, xPos, yPos);
-                xPos += 40;
-            })
-            yPos += 8;
-        }
-
-        const addCheckboxLine = (label: string, isChecked: boolean, text: string) => {
-             if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.text(`${isChecked ? '☑' : '☐'} ${text}`, margin + 60, yPos);
-            yPos += 7;
+        const addSection = (title: string, data: [string, string][]) => {
+            if (yPos > pageHeight - 50) {
+                doc.addPage();
+                yPos = 20;
+            }
+            doc.autoTable({
+                startY: yPos,
+                head: [[title]],
+                body: data,
+                theme: 'grid',
+                headStyles: { fillColor: [45, 95, 51] },
+            });
+            yPos = doc.autoTable.previous.finalY + 10;
         };
 
-        const addCostLine = (label: string, value: string) => {
-             if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text(label, margin + 10, yPos);
-            doc.setFont('helvetica', 'normal');
-            doc.text(value, margin + 80, yPos);
-            yPos += 8;
-        }
-        
-        const addSectionTitle = (title: string) => {
-          if (yPos > 260) { doc.addPage(); yPos = 20; }
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text(title, margin, yPos);
-            yPos += 8;
-        }
-
-        addLine('Project:', formState.project);
-        addLine('Address:', formState.address);
-        addLine('Project No:', formState.projectNo);
-        addLine('Prepared By:', formState.preparedBy);
-        addLine('Prepared Date:', formState.preparedDate);
-        yPos += 5;
-
-        addSectionTitle('About Owner:');
-        addLine('Full Name:', formState.ownerFullName);
-        addLine('Address (Office):', formState.ownerOfficeAddress);
-        addLine('Address (Res.):', formState.ownerResAddress);
-        addLine('Phone (Office):', formState.ownerOfficePhone);
-        addLine('Phone (Res.):', formState.ownerResPhone);
-        yPos += 5;
-        
-        addSectionTitle("Owner's Project Representative:");
-        addLine('Name:', formState.repName);
-        addLine('Address (Office):', formState.repOfficeAddress);
-        addLine('Address (Res.):', formState.repResAddress);
-        addLine('Phone (Office):', formState.repOfficePhone);
-        addLine('Phone (Res.):', formState.repResPhone);
-        yPos += 5;
-
-        addSectionTitle('About Project:');
-        addLine('Address:', formState.projectAboutAddress);
-        doc.setFont('helvetica', 'bold'); doc.text('Project Reqt.', margin, yPos);
-        addCheckboxLine('', formState.reqArchitectural, 'i. Architectural Designing');
-        addCheckboxLine('', formState.reqInterior, 'ii. Interior Decoration');
-        addCheckboxLine('', formState.reqLandscaping, 'iii. Landscaping');
-        addCheckboxLine('', formState.reqTurnkey, 'iv. Turnkey');
-        addCheckboxLine('', formState.reqOther, `v. Other: ${formState.reqOtherText}`);
-        yPos += 5;
-
-        addRadioLine('Project Type:', ['Commercial', 'Residential'], formState.projectType);
-        addRadioLine('Project Status:', ['New', 'Addition', 'Rehabilitation/Renovation'], formState.projectStatus);
-        
-        addLine('Project Area:', formState.projectArea);
-        addTextArea('Special Requirements of Project:', formState.specialRequirements);
-        
-        doc.setFont('helvetica', 'bold'); doc.text("Project's Cost:", margin, yPos); yPos += 8;
-        addCostLine('i. Architectural Designing', formState.costArchitectural);
-        addCostLine('ii. Interior Decoration', formState.costInterior);
-        addCostLine('iii. Landscaping', formState.costLandscaping);
-        addCostLine('iv. Construction', formState.costConstruction);
-        addCostLine('v. Turnkey', formState.costTurnkey);
-        addCostLine('vi. Other', formState.costOther);
-        yPos += 5;
-        
-        doc.addPage();
-        yPos = 20;
-        
-        addSectionTitle('Dates Concerned with Project:');
-        addLine('First Information about Project:', formState.dateFirstInfo);
-        addLine('First Meeting:', formState.dateFirstMeeting);
-        addLine('First Working on Project:', formState.dateFirstWorking);
-        addLine('First Proposal:', `Start: ${formState.dateFirstProposalStart}, Completion: ${formState.dateFirstProposalEnd}`);
-        addLine('Second Proposal:', `Start: ${formState.dateSecondProposalStart}, Completion: ${formState.dateSecondProposalEnd}`);
-        addLine('First Information:', formState.dateFirstInfo2);
-        addLine('Working on Finalized Proposal:', formState.dateWorkingFinalized);
-        addLine('Revised Presentation:', formState.dateRevisedPresentation);
-        addLine('Quotation:', formState.dateQuotation);
-        addLine('Drawings:', `Start: ${formState.dateDrawingsStart}, Completion: ${formState.dateDrawingsEnd}`);
-        addTextArea('Other Major Projects Milestone Dates:', formState.dateOtherMilestones);
-        yPos += 5;
-
-        addSectionTitle('Provided by Owner:');
-        addTextArea('Program:', formState.ownerProgram);
-        addTextArea('Suggested Schedule:', formState.ownerSchedule);
-        addTextArea('Legal Site Description & Other Concerned Documents:', formState.ownerLegal);
-        addTextArea('Land Survey Report:', formState.ownerLandSurvey);
-        addTextArea('Geo-Technical, Tests and Other Site Information:', formState.ownerGeoTech);
-        addTextArea("Existing Structure's Drawings:", formState.ownerExistingDrawings);
-        yPos += 5;
-
-        doc.addPage();
-        yPos = 20;
-
-        addSectionTitle('Compensation:');
-        addLine('Initial Payment:', formState.compInitialPayment);
-        addLine('Basic Services:', `${formState.compBasicServices} % of Cost of Construction`);
-        doc.setFont('helvetica', 'bold'); doc.text('Breakdown by Phase:', margin, yPos); yPos+=8;
-        addLine('Schematic Design:', `${formState.compSchematic} %`);
-        addLine('Design Development:', `${formState.compDesignDev} %`);
-        addLine("Construction Doc's:", `${formState.compConstructionDocs} %`);
-        addLine('Bidding / Negotiation:', `${formState.compBidding} %`);
-        addLine('Construction Contract Admin:', `${formState.compConstructionAdmin} %`);
-        addLine('Additional Services:', `Multiple of ${formState.compAdditionalServices} Times Direct Cost to Architect`);
-        addLine('Reimbursable Expenses:', formState.compReimbursable);
-        addLine('Other:', formState.compOther);
-        yPos += 5;
-        
-        doc.addPage();
-        yPos = 20;
-        
-        addSectionTitle('Consultants:');
-        const consultantHead = [['Type', 'Within Basic Fee', 'Additional Fee', 'Architect', 'Owner']];
-        const consultantBody = Object.entries(consultants).map(([type, values]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]);
-        doc.autoTable({
-          head: consultantHead,
-          body: consultantBody,
-          startY: yPos,
-          theme: 'grid',
-        });
-        yPos = doc.autoTable.previous.finalY + 10;
-        
-        if (yPos > 250) { doc.addPage(); yPos = 20; }
-        addSectionTitle('Requirements');
-        const reqHead = [['Residence', 'Nos.', 'Remarks']];
-        const reqBody = residenceRequirements.map((req, index) => [
-          `${index + 1}. ${req}`,
-          requirements[req].nos,
-          requirements[req].remarks
+        addSection('Project Information', [
+            ['Project', formState.project],
+            ['Address', formState.address],
+            ['Project No', formState.projectNo],
+            ['Prepared By', formState.preparedBy],
+            ['Prepared Date', formState.preparedDate],
         ]);
+
+        addSection('About Owner', [
+            ['Full Name', formState.ownerFullName],
+            ['Address (Office)', formState.ownerOfficeAddress],
+            ['Address (Res.)', formState.ownerResAddress],
+            ['Phone (Office)', formState.ownerOfficePhone],
+            ['Phone (Res.)', formState.ownerResPhone],
+        ]);
+
+        addSection("Owner's Project Representative", [
+            ['Name', formState.repName],
+            ['Address (Office)', formState.repOfficeAddress],
+            ['Address (Res.)', formState.repResAddress],
+            ['Phone (Office)', formState.repOfficePhone],
+            ['Phone (Res.)', formState.repResPhone],
+        ]);
+        
+        const reqs = [
+            `Architectural Designing: ${formState.reqArchitectural ? '☑ Yes' : '☐ No'}`,
+            `Interior Decoration: ${formState.reqInterior ? '☑ Yes' : '☐ No'}`,
+            `Landscaping: ${formState.reqLandscaping ? '☑ Yes' : '☐ No'}`,
+            `Turnkey: ${formState.reqTurnkey ? '☑ Yes' : '☐ No'}`,
+            `Other: ${formState.reqOther ? `☑ Yes (${formState.reqOtherText})` : '☐ No'}`,
+        ].join('\n');
+        
+        addSection('About Project', [
+            ['Address', formState.projectAboutAddress],
+            ['Project Reqt.', reqs],
+            ['Project Type', formState.projectType],
+            ['Project Status', formState.projectStatus],
+            ['Project Area', formState.projectArea],
+            ['Special Requirements', formState.specialRequirements],
+        ]);
+
+        addSection("Project's Cost", [
+            ['Architectural Designing', formState.costArchitectural],
+            ['Interior Decoration', formState.costInterior],
+            ['Landscaping', formState.costLandscaping],
+            ['Construction', formState.costConstruction],
+            ['Turnkey', formState.costTurnkey],
+            ['Other', formState.costOther],
+        ]);
+        
+        addSection('Dates Concerned with Project', [
+          ['First Information about Project', formState.dateFirstInfo],
+          ['First Meeting', formState.dateFirstMeeting],
+          ['First Working on Project', formState.dateFirstWorking],
+          ['First Proposal', `Start: ${formState.dateFirstProposalStart}, Completion: ${formState.dateFirstProposalEnd}`],
+          ['Second Proposal', `Start: ${formState.dateSecondProposalStart}, Completion: ${formState.dateSecondProposalEnd}`],
+          ['First Information (2)', formState.dateFirstInfo2],
+          ['Working on Finalized Proposal', formState.dateWorkingFinalized],
+          ['Revised Presentation', formState.dateRevisedPresentation],
+          ['Quotation', formState.dateQuotation],
+          ['Drawings', `Start: ${formState.dateDrawingsStart}, Completion: ${formState.dateDrawingsEnd}`],
+          ['Other Major Milestones', formState.dateOtherMilestones],
+        ]);
+
+        addSection('Provided by Owner', [
+            ['Program', formState.ownerProgram],
+            ['Suggested Schedule', formState.ownerSchedule],
+            ['Legal Site Description & Other Concerned Documents', formState.ownerLegal],
+            ['Land Survey Report', formState.ownerLandSurvey],
+            ['Geo-Technical, Tests and Other Site Information', formState.ownerGeoTech],
+            ["Existing Structure's Drawings", formState.ownerExistingDrawings],
+        ]);
+
+        addSection('Compensation', [
+            ['Initial Payment', formState.compInitialPayment],
+            ['Basic Services', `${formState.compBasicServices} % of Cost of Construction`],
+            ['Breakdown by Phase', `Schematic: ${formState.compSchematic}%, Design Dev: ${formState.compDesignDev}%, Construction Docs: ${formState.compConstructionDocs}%, Bidding: ${formState.compBidding}%, Construction Admin: ${formState.compConstructionAdmin}%`],
+            ['Additional Services', `Multiple of ${formState.compAdditionalServices} Times Direct Cost to Architect`],
+            ['Reimbursable Expenses', formState.compReimbursable],
+            ['Other', formState.compOther],
+        ]);
+
+        if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
         doc.autoTable({
-            head: reqHead,
-            body: reqBody,
             startY: yPos,
+            head: [['Consultants', 'Within Basic Fee', 'Additional Fee', 'Architect', 'Owner']],
+            body: Object.entries(consultants).map(([type, values]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]),
             theme: 'grid',
+            headStyles: { fillColor: [45, 95, 51] },
         });
         yPos = doc.autoTable.previous.finalY + 10;
 
-        doc.addPage();
-        yPos = 20;
+        if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
+        doc.autoTable({
+            startY: yPos,
+            head: [['Requirements (Residence)', 'Nos.', 'Remarks']],
+            body: Object.entries(requirements).map(([req, values]) => [req, values.nos, values.remarks]),
+            theme: 'grid',
+            headStyles: { fillColor: [45, 95, 51] },
+        });
+        yPos = doc.autoTable.previous.finalY + 10;
 
-        addSectionTitle('Special Confidential Requirements:');
-        addTextArea('', formState.specialConfidential);
-        yPos+= 5;
-        
-        addSectionTitle('Miscellaneous Notes:');
-        addTextArea('', formState.miscNotes);
+        addSection('Special Confidential Requirements', [['', formState.specialConfidential]]);
+        addSection('Miscellaneous Notes', [['', formState.miscNotes]]);
+
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
 
         doc.save('project-information.pdf');
-        toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
+        toast({ title: 'Download Started', description: 'Your Project Information PDF is being generated.' });
     };
 
     return (
