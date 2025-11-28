@@ -35,6 +35,7 @@ import {
   Save,
   Eye,
   Archive,
+  FilePen,
   type LucideIcon,
 } from 'lucide-react';
 
