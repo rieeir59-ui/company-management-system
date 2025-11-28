@@ -1,8 +1,11 @@
+
 'use client';
 
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import { Users, Briefcase, XCircle, Clock, CheckCircle2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
