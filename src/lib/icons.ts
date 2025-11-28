@@ -36,6 +36,7 @@ import {
   Eye,
   Archive,
   FilePen,
+  File as FileIcon,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -62,7 +63,7 @@ export const fileNameToIconMap: Record<string, LucideIcon> = {
     "Project Information": Folder,
     "Proposal Request": Briefcase,
     "Rate Analysis": BarChart2,
-    "Shop Drawing and Sample Record": File,
+    "Shop Drawing and Sample Record": FileIcon,
     "Timeline Schedule": Clock,
     "Commercial Timeline": Building2,
     "Residential Timeline": Home,
