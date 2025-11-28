@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -291,16 +292,6 @@ const ServiceCard = ({
 export default function ProjectChecklistPage() {
   return (
     <div className="space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-5xl font-headline text-primary mb-2">
-            Our Services
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-            We offer a comprehensive range of architectural and design services
-            to bring your vision to life.
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {serviceCategories.map((cat) => (
             <ServiceCard key={cat.number} {...cat} />
