@@ -20,6 +20,12 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useSearchParams } from 'next/navigation';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
 
 const Section = ({ title, children, className }: { title: string; children: React.ReactNode, className?: string }) => (
     <div className={`mb-6 pt-4 border-t border-dashed ${className}`}>
@@ -284,13 +290,193 @@ function ProjectInformationComponent() {
         }
     };
     
-    const handleDownload = () => {
-        toast({
-            title: "Preparing Download",
-            description: "Your PDF will be generated shortly. Please use your browser's print dialog to 'Save as PDF'.",
-        });
-        setTimeout(() => window.print(), 500);
-    };
+    const handleDownloadPdf = () => {
+      const doc = new jsPDF() as jsPDFWithAutoTable;
+      const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
+      let yPos = 15;
+      const primaryColor = [45, 95, 51];
+      const headingFillColor = [240, 240, 240];
+      const margin = 14;
+
+      const addSectionTitle = (title: string) => {
+          if (yPos > pageHeight - 30) { doc.addPage(); yPos = 20; }
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+          doc.text(title, margin, yPos);
+          yPos += 8;
+          doc.setTextColor(0, 0, 0);
+      };
+      
+      const addTable = (body: (string | null)[][]) => {
+          doc.autoTable({
+              startY: yPos,
+              body: body,
+              theme: 'grid',
+              styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+              columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } },
+          });
+          yPos = doc.autoTable.previous.finalY + 10;
+      };
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.text('PROJECT INFORMATION', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 15;
+      doc.setTextColor(0, 0, 0);
+
+      addSectionTitle("Project Information");
+      addTable([
+          ['Project:', formState.project],
+          ['Address:', formState.address],
+          ['Project No:', formState.projectNo],
+          ['Prepared By:', formState.preparedBy],
+          ['Prepared Date:', formState.preparedDate],
+      ]);
+      
+      addSectionTitle("About Owner");
+      addTable([
+          ['Full Name:', formState.ownerFullName],
+          ['Address (Office):', formState.ownerOfficeAddress],
+          ['Address (Res.):', formState.ownerResAddress],
+          ['Phone (Office):', formState.ownerOfficePhone],
+          ['Phone (Res.):', formState.ownerResPhone],
+      ]);
+
+      addSectionTitle("Owner's Project Representative");
+      addTable([
+          ['Name:', formState.repName],
+          ['Address (Office):', formState.repOfficeAddress],
+          ['Address (Res.):', formState.repResAddress],
+          ['Phone (Office):', formState.repOfficePhone],
+          ['Phone (Res.):', formState.repResPhone],
+      ]);
+      
+      addSectionTitle("About Project");
+      let projectReq = [
+        formState.reqArchitectural ? '☑ Architectural Designing' : '☐ Architectural Designing',
+        formState.reqInterior ? '☑ Interior Decoration' : '☐ Interior Decoration',
+        formState.reqLandscaping ? '☑ Landscaping' : '☐ Landscaping',
+        formState.reqTurnkey ? '☑ Turnkey' : '☐ Turnkey',
+        formState.reqOther ? `☑ Other: ${formState.reqOtherText}` : '☐ Other:',
+      ].join('\n');
+      addTable([
+          ['Address:', formState.projectAboutAddress],
+          ['Project Reqt.:', projectReq],
+          ['Project Type:', formState.projectType],
+          ['Project Status:', formState.projectStatus],
+          ['Project Area:', formState.projectArea],
+          ['Special Requirements:', formState.specialRequirements],
+      ]);
+      
+      addSectionTitle("Project's Cost");
+      addTable([
+        ['Architectural Designing:', formState.costArchitectural],
+        ['Interior Decoration:', formState.costInterior],
+        ['Landscaping:', formState.costLandscaping],
+        ['Construction:', formState.costConstruction],
+        ['Turnkey:', formState.costTurnkey],
+        ['Other:', formState.costOther],
+      ]);
+      
+      doc.addPage();
+      yPos = 20;
+
+      addSectionTitle("Dates Concerned with Project");
+      addTable([
+          ['First Information about Project:', formState.dateFirstInfo],
+          ['First Meeting:', formState.dateFirstMeeting],
+          ['First Working on Project:', formState.dateFirstWorking],
+          ['First Proposal Start:', formState.dateFirstProposalStart],
+          ['First Proposal Completion:', formState.dateFirstProposalEnd],
+          ['Second Proposal Start:', formState.dateSecondProposalStart],
+          ['Second Proposal Completion:', formState.dateSecondProposalEnd],
+          ['First Information:', formState.dateFirstInfo2],
+          ['Working on Finalized Proposal:', formState.dateWorkingFinalized],
+          ['Revised Presentation:', formState.dateRevisedPresentation],
+          ['Quotation:', formState.dateQuotation],
+          ['Drawings Start:', formState.dateDrawingsStart],
+          ['Drawings Completion:', formState.dateDrawingsEnd],
+          ['Other Major Projects Milestone Dates:', formState.dateOtherMilestones],
+      ]);
+
+      addSectionTitle("Provided by Owner");
+      addTable([
+          ['Program:', formState.ownerProgram],
+          ['Suggested Schedule:', formState.ownerSchedule],
+          ['Legal Site Description & Other Concerned Documents:', formState.ownerLegal],
+          ['Land Survey Report:', formState.ownerLandSurvey],
+          ['Geo-Technical, Tests and Other Site Information:', formState.ownerGeoTech],
+          ["Existing Structure's Drawings:", formState.ownerExistingDrawings],
+      ]);
+
+      addSectionTitle("Compensation");
+      addTable([
+        ['Initial Payment:', formState.compInitialPayment],
+        ['Basic Services (% of Cost of Construction):', formState.compBasicServices],
+        ['Breakdown - Schematic Design (%):', formState.compSchematic],
+        ['Breakdown - Design Development (%):', formState.compDesignDev],
+        ["Breakdown - Construction Doc's (%):", formState.compConstructionDocs],
+        ['Breakdown - Bidding / Negotiation (%):', formState.compBidding],
+        ['Breakdown - Construction Contract Admin (%):', formState.compConstructionAdmin],
+        ['Additional Services (Multiple of):', formState.compAdditionalServices],
+        ['Reimbursable Expenses:', formState.compReimbursable],
+        ['Other:', formState.compOther],
+      ]);
+
+      doc.addPage();
+      yPos = 20;
+
+      addSectionTitle("Consultants");
+      const consultantBody = consultantTypes.map(type => [
+          type,
+          consultants[type]?.withinFee || '',
+          consultants[type]?.additionalFee || '',
+          consultants[type]?.architect || '',
+          consultants[type]?.owner || '',
+      ]).filter(row => row[0] || row[1] || row[2] || row[3] || row[4]);
+      
+      doc.autoTable({
+        startY: yPos,
+        head: [['Type', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
+        body: consultantBody,
+        theme: 'grid'
+      });
+      yPos = doc.autoTable.previous.finalY + 10;
+      
+      addSectionTitle("Requirements");
+      const reqsBody = residenceRequirements.map(req => [
+          req,
+          requirements[req]?.nos || '',
+          requirements[req]?.remarks || '',
+      ]);
+      doc.autoTable({
+        startY: yPos,
+        head: [['Description', 'Nos.', 'Remarks']],
+        body: reqsBody,
+        theme: 'grid'
+      });
+      yPos = doc.autoTable.previous.finalY + 10;
+
+      addSectionTitle("Special Confidential Requirements");
+      doc.text(doc.splitTextToSize(formState.specialConfidential, pageWidth - margin * 2), margin, yPos);
+      yPos += doc.splitTextToSize(formState.specialConfidential, pageWidth - margin * 2).length * 5 + 10;
+      
+      addSectionTitle("Miscellaneous Notes");
+      doc.text(doc.splitTextToSize(formState.miscNotes, pageWidth - margin * 2), margin, yPos);
+      
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      }
+
+      doc.save(`${formState.project || 'project'}_information.pdf`);
+  };
     
     if (isLoading) {
         return (
@@ -511,7 +697,7 @@ function ProjectInformationComponent() {
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
                             <Button type="button" onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                            <Button type="button" onClick={handleDownload}><Printer className="mr-2 h-4 w-4" /> Download/Print PDF</Button>
+                            <Button type="button" onClick={handleDownloadPdf}><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </form>
                 </CardContent>
@@ -527,3 +713,5 @@ export default function ProjectInformationPage() {
         </Suspense>
     )
 }
+
+    
