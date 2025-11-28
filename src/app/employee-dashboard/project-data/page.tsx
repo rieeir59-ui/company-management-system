@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,6 +11,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Save, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
 
 const Section = ({ title, children }: { title?: string; children: React.ReactNode }) => (
   <section className="mb-6">
@@ -71,16 +78,143 @@ export default function ProjectDataPage() {
     }
 
     const handleDownloadPdf = () => {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        let yPos = 15;
+        const margin = 14;
+        const col1X = margin;
+        const col2X = 90;
+        const col3X = 150;
+        const primaryColor = [45, 95, 51];
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text('PROJECT DATA', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 10;
+        doc.setTextColor(0, 0, 0);
+
+        const addSection = (title: string, data: [string, string][]) => {
+            if (yPos > 250) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.text(title, margin, yPos);
+            yPos += 8;
+            doc.autoTable({
+                startY: yPos,
+                body: data,
+                theme: 'grid',
+                styles: { fontSize: 9, cellPadding: 2 },
+                headStyles: { fontStyle: 'bold' },
+                columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' } }
+            });
+            yPos = doc.autoTable.previous.finalY + 10;
+        };
+
+        addSection('Project Information', [
+            ['Project:', formData.project_name],
+            ['Address:', formData.project_address],
+            ['Owner:', formData.project_owner],
+            ["Architect's Project No.:", formData.architect_project_no],
+            ['Date:', formData.project_date],
+            ['Tel:', formData.project_tel],
+            ['Business Address:', formData.business_address],
+            ['Home Address:', formData.home_address],
+            ['Tel (Business):', formData.business_tel],
+            ['Tel (Home):', formData.home_tel],
+        ]);
+
+        addSection('General Information', [
+            ['Proposed Improvements:', formData.proposed_improvements],
+            ['Building Dept. Classification:', formData.building_classification],
+            ['Set Backs:', `N: ${formData.setback_n}, E: ${formData.setback_e}, S: ${formData.setback_s}, W: ${formData.setback_w}, Coverage: ${formData.setback_coverage}`],
+            ['Cost:', formData.project_cost],
+            ['Stories:', formData.project_stories],
+            ['Fire Zone:', formData.fire_zone],
+            ['Other Agency Standards or Approvals Required:', formData.agency_approvals],
+        ]);
+        
+        addSection('Site Legal Description', [
+            ['Description:', formData.site_legal_description],
+            ['Deed recorded in Vol.:', formData.deed_vol],
+            ['Page:', formData.deed_page],
+            ['at:', formData.deed_at],
+            ['to:', formData.deed_to],
+            ['Date:', formData.deed_date],
+            ['Restrictions:', formData.restrictions],
+            ['Easements:', formData.easements],
+            ['Liens, Leases:', formData.liens_leases],
+            ['Lot Dimensions:', `Dimensions: ${formData.lot_dimensions}, Facing: ${formData.lot_facing}, Value: ${formData.lot_value}`],
+            ['Adjacent property use:', formData.adjacent_property_use],
+        ]);
+
+        doc.addPage();
+        yPos = 20;
+
+        addSection('Contacts', [
+            ['Owners: Name:', formData.owner_name_contact],
+            ['Designated Representative:', formData.rep_name_contact],
+            ['Address:', formData.contact_address],
+            ['Tel:', formData.contact_tel],
+            ['Attorney at Law:', formData.attorney],
+            ['Insurance Advisor:', formData.insurance_advisor],
+            ['Consultant on:', formData.consultant_on],
+        ]);
+        
+        addSection('Site Information Sources', [
+            ['Property Survey by:', `${formData.survey_property} (Date: ${formData.survey_property_date})`],
+            ['Topographic Survey by:', `${formData.survey_topo} (Date: ${formData.survey_topo_date})`],
+            ['Soils Tests by:', `${formData.soils_tests} (Date: ${formData.soils_date})`],
+            ['Aerial Photos by:', `${formData.aerial_photos} (Date: ${formData.aerial_date})`],
+            ['Maps:', formData.maps_source],
+        ]);
+        
+        addSection('Public Services', [
+            ['Gas Company (Name, Address):', formData.gas_company],
+            ['Representative / Tel:', `${formData.gas_rep} / ${formData.gas_tel}`],
+            ['Electric Co (Name, Address):', formData.electric_company],
+            ['Representative / Tel:', `${formData.electric_rep} / ${formData.electric_tel}`],
+            ['Telephone Co (Name, Address):', formData.tel_company],
+            ['Representative / Tel:', `${formData.tel_rep} / ${formData.tel_tel}`],
+            ['Sewers:', formData.sewers],
+            ['Water:', formData.water],
+        ]);
+
+        doc.addPage();
+        yPos = 20;
+
+        addSection('Financial Data', [
+            ['Loan:', `Amount: ${formData.loan_amount}, Type: ${formData.loan_type}, Rate: ${formData.loan_rate}`],
+            ['Loan by:', formData.loan_by],
+            ['Representative / Tel:', `${formData.loan_rep} / ${formData.loan_tel}`],
+            ['Bonds or Liens:', formData.bonds_liens],
+            ['Grant:', `Amount: ${formData.grant_amount}, Limitations: ${formData.grant_limitations}`],
+            ['Grant from:', formData.grant_from],
+            ['Representative / Tel:', `${formData.grant_rep} / ${formData.grant_tel}`],
+        ]);
+
+        addSection('Method of Handling', [
+            ['Contract Type:', formData.contract_type],
+            ['Negotiated:', formData.negotiated],
+            ['Bid:', formData.bid],
+            ['Stipulated Sum:', formData.stipulated_sum],
+            ['Cost Plus Fee:', formData.cost_plus_fee],
+            ['Force Amount:', formData.force_amount],
+            ['Equipment:', `Fixed: ${formData.equipment_fixed}, Movable: ${formData.equipment_movable}, Interiors: ${formData.equipment_interiors}`],
+            ['Landscaping:', formData.landscaping],
+        ]);
+        
+        addSection('Sketch of Property', [['Notations:', formData.sketch_notes]]);
+        
+        doc.save('project_data.pdf');
         toast({
-            title: "Preparing PDF",
-            description: "Your document will be ready to print or save shortly.",
+            title: "Download Started",
+            description: "Your project data PDF is being generated.",
         });
-        setTimeout(() => window.print(), 500);
     }
     
     return (
         <div className="space-y-8 project-data-page">
-             <div className='no-print'>
+            <div className='no-print'>
                 <DashboardPageHeader
                     title="Project Data"
                     description="A comprehensive data sheet for the project."
@@ -239,7 +373,7 @@ export default function ProjectDataPage() {
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
                             <Button type="button" onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                            <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download/Print PDF</Button>
+                            <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </form>
                 </CardContent>
@@ -247,3 +381,5 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
+    
