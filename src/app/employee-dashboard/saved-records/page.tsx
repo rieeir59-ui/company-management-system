@@ -2,14 +2,15 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useFirebase } from '@/firebase/provider';
-import { collection, query, where, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +30,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { cn } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-
+import { useToast } from '@/hooks/use-toast';
+import { useEmployees } from '@/context/EmployeeContext';
 
 type SavedRecordData = {
     category: string;
@@ -45,6 +47,29 @@ type SavedRecord = {
     projectName: string;
     createdAt: Timestamp;
     data: SavedRecordData[] | Record<string, any>;
+};
+
+type TaskRecord = {
+    id: string;
+    taskName: string;
+    projectName: string;
+    assignedTo: string;
+    assignedBy: string;
+    dueDate: string;
+    status: 'not-started' | 'in-progress' | 'completed';
+};
+
+const StatusIcon = ({ status }: { status: TaskRecord['status'] }) => {
+    switch (status) {
+        case 'completed':
+            return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+        case 'in-progress':
+            return <Clock className="h-5 w-5 text-blue-500" />;
+        case 'not-started':
+            return <XCircle className="h-5 w-5 text-red-500" />;
+        default:
+            return null;
+    }
 };
 
 const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
@@ -139,6 +164,7 @@ export default function SavedRecordsPage() {
     const image = PlaceHolderImages.find(p => p.id === 'saved-records');
     const { firestore, auth } = useFirebase();
     const { user: currentUser, isUserLoading } = useCurrentUser();
+    const { toast } = useToast();
 
     const [records, setRecords] = useState<SavedRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -223,6 +249,25 @@ export default function SavedRecordsPage() {
         }
     };
 
+    const handleStatusChange = async (taskId: string, newStatus: TaskRecord['status']) => {
+        if (!firestore) return;
+        const taskRef = doc(firestore, 'tasks', taskId);
+        try {
+          await updateDoc(taskRef, { status: newStatus });
+          toast({
+            title: 'Status Updated',
+            description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
+          });
+        } catch (serverError) {
+          const permissionError = new FirestorePermissionError({
+            path: `tasks/${taskId}`,
+            operation: 'update',
+            requestResourceData: { status: newStatus }
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        }
+    };
+    
     const groupedRecords = useMemo(() => {
         const grouped = records.reduce((acc, record) => {
             const fileName = record.fileName;
@@ -251,6 +296,21 @@ export default function SavedRecordsPage() {
             </div>
         )
     }
+    
+    const parseTaskData = (record: SavedRecord): TaskRecord => {
+        const items: string[] = Array.isArray(record.data) && record.data[0]?.items ? record.data[0].items : [];
+        const findValue = (key: string) => (items.find(item => item.startsWith(key))?.split(':')[1] || '').trim();
+        
+        return {
+            id: record.id,
+            taskName: findValue('taskName'),
+            projectName: record.projectName,
+            assignedTo: findValue('assignedTo'),
+            assignedBy: findValue('assignedBy'),
+            dueDate: findValue('dueDate'),
+            status: (findValue('status') as TaskRecord['status']) || 'not-started',
+        };
+    };
 
     return (
         <>
@@ -286,52 +346,107 @@ export default function SavedRecordsPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="border rounded-lg">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Project Name</TableHead>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead className="text-right w-[100px]">Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {groupedRecords[selectedCategory].length > 0 ? (
-                                            groupedRecords[selectedCategory].map(record => {
-                                                const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
-                                                return (
-                                                    <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
-                                                        <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                        <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
-                                                        <TableCell className="text-right">
-                                                            <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                                                {formUrl && (
-                                                                    <Button asChild variant="ghost" size="icon">
-                                                                        <Link href={`${formUrl}?id=${record.id}`}>
-                                                                            <Edit className="h-4 w-4" />
-                                                                        </Link>
-                                                                    </Button>
-                                                                )}
-                                                                <Button variant="ghost" size="icon" onClick={(e) => openDeleteDialog(e, record)}>
-                                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                                </Button>
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                );
-                                            })
-                                        ) : (
+                                {selectedCategory === 'Task Assignment' ? (
+                                     <Table>
+                                        <TableHeader>
                                             <TableRow>
-                                                <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
-                                                    No records found for this category.
-                                                </TableCell>
+                                                <TableHead>Task Name</TableHead>
+                                                <TableHead>Project</TableHead>
+                                                <TableHead>Assigned To</TableHead>
+                                                <TableHead>Assigned By</TableHead>
+                                                <TableHead>Due Date</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
                                             </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {groupedRecords[selectedCategory].length > 0 ? (
+                                                groupedRecords[selectedCategory].map(record => {
+                                                    const task = parseTaskData(record);
+                                                    return (
+                                                        <TableRow key={record.id}>
+                                                            <TableCell>{task.taskName}</TableCell>
+                                                            <TableCell>{task.projectName}</TableCell>
+                                                            <TableCell>{task.assignedTo}</TableCell>
+                                                            <TableCell>{task.assignedBy}</TableCell>
+                                                            <TableCell>{task.dueDate}</TableCell>
+                                                            <TableCell>
+                                                                 <Select
+                                                                    value={task.status}
+                                                                    onValueChange={(newStatus: TaskRecord['status']) => handleStatusChange(task.id, newStatus)}
+                                                                >
+                                                                    <SelectTrigger className="w-[180px]">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <StatusIcon status={task.status} />
+                                                                            <SelectValue placeholder="Set status" />
+                                                                        </div>
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="not-started"><div className="flex items-center gap-2"><XCircle className="h-5 w-5 text-red-500" />Not Started</div></SelectItem>
+                                                                        <SelectItem value="in-progress"><div className="flex items-center gap-2"><Clock className="h-5 w-5 text-blue-500" />In Progress</div></SelectItem>
+                                                                        <SelectItem value="completed"><div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-500" />Completed</div></SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </TableCell>
+                                                            <TableCell className="text-right">
+                                                                <Button variant="ghost" size="icon" onClick={(e) => openDeleteDialog(e, record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })
+                                            ) : (
+                                                <TableRow><TableCell colSpan={7} className="text-center h-24">No records found.</TableCell></TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Project Name</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead className="text-right w-[100px]">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {groupedRecords[selectedCategory].length > 0 ? (
+                                                groupedRecords[selectedCategory].map(record => {
+                                                    const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
+                                                    return (
+                                                        <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
+                                                            <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                            <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
+                                                            <TableCell className="text-right">
+                                                                <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                                                    {formUrl && (
+                                                                        <Button asChild variant="ghost" size="icon">
+                                                                            <Link href={`${formUrl}?id=${record.id}`}>
+                                                                                <Edit className="h-4 w-4" />
+                                                                            </Link>
+                                                                        </Button>
+                                                                    )}
+                                                                    <Button variant="ghost" size="icon" onClick={(e) => openDeleteDialog(e, record)}>
+                                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                                    </Button>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
+                                                        No records found for this category.
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
-                ) : (
+                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {Object.entries(groupedRecords).map(([fileName, fileRecords]) => {
                            const Icon = getIconForFile(fileName);
