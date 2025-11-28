@@ -130,7 +130,7 @@ export default function ProjectInformationPage() {
     
     const [consultants, setConsultants] = useState<Record<string, { withinFee: string, additionalFee: string, architect: string, owner: string }>>(
       consultantTypes.reduce((acc, type) => {
-        acc[type] = { withinFee: '...', additionalFee: '...', architect: '...', owner: '...' };
+        acc[type] = { withinFee: '', additionalFee: '', architect: '', owner: '' };
         return acc;
       }, {} as Record<string, { withinFee: string, additionalFee: string, architect: string, owner: string }>)
     );
@@ -221,7 +221,7 @@ export default function ProjectInformationPage() {
             if (yPos > 260) { doc.addPage(); yPos = 20; }
             doc.autoTable({
                 head: [[title]],
-                body: data.filter(row => row[1]), // Filter out empty rows
+                body: data.filter(row => row[1]),
                 startY: yPos,
                 theme: 'grid',
                 headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
@@ -229,7 +229,7 @@ export default function ProjectInformationPage() {
             });
             yPos = (doc as any).autoTable.previous.finalY + 10;
         };
-        
+
         const projectReqs = [
             `Architectural Designing: ${formState.reqArchitectural ? '☑' : '☐'}`,
             `Interior Decoration: ${formState.reqInterior ? '☑' : '☐'}`,
@@ -237,7 +237,7 @@ export default function ProjectInformationPage() {
             `Turnkey: ${formState.reqTurnkey ? '☑' : '☐'}`,
             `Other: ${formState.reqOther ? `☑ ${formState.reqOtherText}` : '☐'}`
         ].join('\n');
-        
+
         addSection('Project Information', [
             ['Project', formState.project],
             ['Address', formState.address],
@@ -245,7 +245,7 @@ export default function ProjectInformationPage() {
             ['Prepared By', formState.preparedBy],
             ['Prepared Date', formState.preparedDate],
         ]);
-        
+
         addSection('About Owner', [
             ['Full Name', formState.ownerFullName],
             ['Address (Office)', formState.ownerOfficeAddress],
@@ -268,33 +268,33 @@ export default function ProjectInformationPage() {
         ]);
 
         addSection('Project Details', [
-          ['Project Type', formState.projectType],
-          ['Project Status', formState.projectStatus],
-          ['Project Area', formState.projectArea],
-          ['Special Requirements', formState.specialRequirements]
+            ['Project Type', formState.projectType],
+            ['Project Status', formState.projectStatus],
+            ['Project Area', formState.projectArea],
+            ['Special Requirements', formState.specialRequirements]
         ]);
 
         addSection("Project's Cost", [
-          ['i. Architectural Designing', formState.costArchitectural],
-          ['ii. Interior Decoration', formState.costInterior],
-          ['iii. Landscaping', formState.costLandscaping],
-          ['iv. Construction', formState.costConstruction],
-          ['v. Turnkey', formState.costTurnkey],
-          ['vi. Other', formState.costOther],
+            ['i. Architectural Designing', formState.costArchitectural],
+            ['ii. Interior Decoration', formState.costInterior],
+            ['iii. Landscaping', formState.costLandscaping],
+            ['iv. Construction', formState.costConstruction],
+            ['v. Turnkey', formState.costTurnkey],
+            ['vi. Other', formState.costOther],
         ]);
-        
+
         addSection('Dates Concerned with Project', [
-          ['First Information about Project', formState.dateFirstInfo],
-          ['First Meeting', formState.dateFirstMeeting],
-          ['First Working on Project', formState.dateFirstWorking],
-          ['First Proposal', `Start: ${formState.dateFirstProposalStart}, Completion: ${formState.dateFirstProposalEnd}`],
-          ['Second Proposal', `Start: ${formState.dateSecondProposalStart}, Completion: ${formState.dateSecondProposalEnd}`],
-          ['First Information', formState.dateFirstInfo2],
-          ['Working on Finalized Proposal', formState.dateWorkingFinalized],
-          ['Revised Presentation', formState.dateRevisedPresentation],
-          ['Quotation', formState.dateQuotation],
-          ['Drawings', `Start: ${formState.dateDrawingsStart}, Completion: ${formState.dateDrawingsEnd}`],
-          ['Other Major Projects Milestone Dates', formState.dateOtherMilestones],
+            ['First Information about Project', formState.dateFirstInfo],
+            ['First Meeting', formState.dateFirstMeeting],
+            ['First Working on Project', formState.dateFirstWorking],
+            ['First Proposal', `Start: ${formState.dateFirstProposalStart}, Completion: ${formState.dateFirstProposalEnd}`],
+            ['Second Proposal', `Start: ${formState.dateSecondProposalStart}, Completion: ${formState.dateSecondProposalEnd}`],
+            ['First Information', formState.dateFirstInfo2],
+            ['Working on Finalized Proposal', formState.dateWorkingFinalized],
+            ['Revised Presentation', formState.dateRevisedPresentation],
+            ['Quotation', formState.dateQuotation],
+            ['Drawings', `Start: ${formState.dateDrawingsStart}, Completion: ${formState.dateDrawingsEnd}`],
+            ['Other Major Projects Milestone Dates', formState.dateOtherMilestones],
         ]);
 
         addSection('Provided by Owner', [
@@ -305,7 +305,7 @@ export default function ProjectInformationPage() {
             ['Geo-Technical, Tests and Other Site Information', formState.ownerGeoTech],
             ["Existing Structure's Drawings", formState.ownerExistingDrawings],
         ]);
-
+        
         if (yPos > 200) doc.addPage();
         yPos = doc.previousAutoTable.finalY ? doc.previousAutoTable.finalY + 10 : 20;
 
@@ -322,34 +322,46 @@ export default function ProjectInformationPage() {
             ['Other', formState.compOther],
         ]);
 
-        doc.autoTable({
-            head: [['Consultants', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
-            body: consultantTypes.map(type => [
+        const consultantsBody = consultantTypes
+            .map(type => [
                 type,
                 consultants[type]?.withinFee || '',
                 consultants[type]?.additionalFee || '',
                 consultants[type]?.architect || '',
                 consultants[type]?.owner || '',
-            ]).filter(row => row.slice(1).some(val => val && val !== '...')),
-            startY: yPos, theme: 'grid',
-            headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
-        });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
+            ])
+            .filter(row => row.slice(1).some(val => val && val !== '...')); // Filter out empty/default rows
         
+        if (consultantsBody.length > 0) {
+            doc.autoTable({
+                head: [['Consultants', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
+                body: consultantsBody,
+                startY: yPos, theme: 'grid',
+                headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
+            });
+            yPos = (doc as any).autoTable.previous.finalY + 10;
+        }
+
         if (yPos > 200) doc.addPage();
         yPos = doc.previousAutoTable.finalY ? doc.previousAutoTable.finalY + 10 : 20;
         
-        doc.autoTable({
-            head: [['Residence Requirements', 'Nos.', 'Remarks']],
-            body: residenceRequirements.map(req => [
+        const requirementsBody = residenceRequirements
+            .map(req => [
                 req,
                 requirements[req]?.nos || '',
                 requirements[req]?.remarks || '',
-            ]).filter(row => row[1] || row[2]),
-            startY: yPos, theme: 'grid',
-            headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
-        });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
+            ])
+            .filter(row => row[1] || row[2]);
+        
+        if (requirementsBody.length > 0) {
+            doc.autoTable({
+                head: [['Residence Requirements', 'Nos.', 'Remarks']],
+                body: requirementsBody,
+                startY: yPos, theme: 'grid',
+                headStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 20 },
+            });
+            yPos = (doc as any).autoTable.previous.finalY + 10;
+        }
 
         addSection('Special Confidential Requirements', [[formState.specialConfidential]]);
         addSection('Miscellaneous Notes', [[formState.miscNotes]]);
