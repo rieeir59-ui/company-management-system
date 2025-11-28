@@ -19,6 +19,7 @@ import { useCurrentUser } from '@/context/UserContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
 
 interface jsPDFWithAutoTable extends jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -71,7 +72,10 @@ export default function ShopDrawingsRecordPage() {
     };
     
     const handleActionCheckboxChange = (id: number, value: string, checked: boolean) => {
-        const newActions = checked ? [value] : [];
+        const currentActions = rows.find(row => row.id === id)?.action || [];
+        const newActions = checked
+            ? [...currentActions, value]
+            : currentActions.filter(a => a !== value);
         handleRowChange(id, 'action', newActions);
     };
 
@@ -155,15 +159,15 @@ export default function ShopDrawingsRecordPage() {
             row.dateSent,
             row.numCopies,
             row.dateRetdReferred,
-            row.action.includes('approved'),
-            row.action.includes('approved_as_noted'),
-            row.action.includes('revise_resubmit'),
-            row.action.includes('not_approved'),
+            row.action.includes('approved') ? '✓' : '',
+            row.action.includes('approved_as_noted') ? '✓' : '',
+            row.action.includes('revise_resubmit') ? '✓' : '',
+            row.action.includes('not_approved') ? '✓' : '',
             row.dateRetdAction,
-            row.copiesTo.includes('Contractor'),
-            row.copiesTo.includes('Owner'),
-            row.copiesTo.includes('Field'),
-            row.copiesTo.includes('File'),
+            row.copiesTo.includes('Contractor') ? '✓' : '',
+            row.copiesTo.includes('Owner') ? '✓' : '',
+            row.copiesTo.includes('Field') ? '✓' : '',
+            row.copiesTo.includes('File') ? '✓' : '',
         ]);
 
         doc.autoTable({
@@ -174,13 +178,13 @@ export default function ShopDrawingsRecordPage() {
             headStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold', halign: 'center', valign: 'middle' },
             styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
             didDrawCell: function (data) {
-                const checkboxColumns = [8, 9, 10, 11, 13, 14, 15, 16];
-                if (data.section === 'body' && checkboxColumns.includes(data.column.index)) {
-                    if (data.cell.raw === true) {
-                        doc.setFillColor(0, 0, 0);
-                        doc.rect(data.cell.x + 2, data.cell.y + 2, 3, 3, 'F');
-                    }
-                    data.cell.text = ''; // Clear the raw boolean value
+                const isChecked = data.cell.raw === '✓';
+                if (data.section === 'body' && isChecked) {
+                    doc.setFillColor(0, 0, 0);
+                    const checkboxSize = 3;
+                    const cellCenterY = data.cell.y + data.cell.height / 2;
+                    doc.rect(data.cell.x + (data.cell.width / 2) - (checkboxSize / 2), cellCenterY - (checkboxSize / 2), checkboxSize, checkboxSize, 'F');
+                    data.cell.text = ''; // Clear the raw value
                 }
             }
         });
@@ -211,58 +215,64 @@ export default function ShopDrawingsRecordPage() {
                         </div>
                     </form>
 
-                    <div className="space-y-6">
-                        {rows.map((row, index) => (
-                           <Card key={row.id} className="p-4 relative">
-                             <CardHeader className="p-2">
-                               <CardTitle className="text-lg">Record #{index + 1}</CardTitle>
-                             </CardHeader>
-                             <CardContent className="p-2 space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="space-y-2"><Label>Date Record</Label><Input type="date" value={row.date} onChange={e => handleRowChange(row.id, 'date', e.target.value)} /></div>
-                                    <div className="space-y-2"><Label># Record</Label><Input value={row.recordNo} onChange={e => handleRowChange(row.id, 'recordNo', e.target.value)} /></div>
-                                    <div className="space-y-2"><Label>Trade</Label><Input placeholder="Contractor/Sub/Trade" value={row.contractorSubcontractorTrade} onChange={e => handleRowChange(row.id, 'contractorSubcontractorTrade', e.target.value)} /></div>
-                                </div>
+                     <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[150px]">Date Record</TableHead>
+                            <TableHead className="min-w-[150px]"># Record</TableHead>
+                            <TableHead className="min-w-[250px]">Spec/Drawing/Title</TableHead>
+                            <TableHead className="min-w-[200px]">Trade</TableHead>
+                            <TableHead className="min-w-[300px]">Referred</TableHead>
+                            <TableHead className="min-w-[400px]">Action</TableHead>
+                            <TableHead className="min-w-[150px]">Date Ret'd Action</TableHead>
+                            <TableHead className="min-w-[300px]">Copies To</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {rows.map(row => (
+                            <TableRow key={row.id}>
+                              <TableCell><Input type="date" value={row.date} onChange={e => handleRowChange(row.id, 'date', e.target.value)} /></TableCell>
+                              <TableCell><Input value={row.recordNo} onChange={e => handleRowChange(row.id, 'recordNo', e.target.value)} /></TableCell>
+                              <TableCell>
+                                <Input placeholder="Spec. Section No." value={row.specSectionNo} onChange={e => handleRowChange(row.id, 'specSectionNo', e.target.value)} className="mb-2" />
+                                <Input placeholder="Shop/Sample Drawing No." value={row.drawingNo} onChange={e => handleRowChange(row.id, 'drawingNo', e.target.value)} className="mb-2" />
+                                <Textarea placeholder="Title" value={row.title} onChange={e => handleRowChange(row.id, 'title', e.target.value)} rows={2} />
+                              </TableCell>
+                              <TableCell><Input placeholder="Contractor/Sub/Trade" value={row.contractorSubcontractorTrade} onChange={e => handleRowChange(row.id, 'contractorSubcontractorTrade', e.target.value)} /></TableCell>
+                              <TableCell>
+                                <Input placeholder="To" value={row.referredTo} onChange={e => handleRowChange(row.id, 'referredTo', e.target.value)} className="mb-2" />
+                                <Input type="date" value={row.dateSent} onChange={e => handleRowChange(row.id, 'dateSent', e.target.value)} className="mb-2" />
+                                <Input type="number" placeholder="# Copies" value={row.numCopies} onChange={e => handleRowChange(row.id, 'numCopies', e.target.value)} className="mb-2" />
+                                <Input type="date" value={row.dateRetdReferred} onChange={e => handleRowChange(row.id, 'dateRetdReferred', e.target.value)} />
+                              </TableCell>
+                              <TableCell>
                                 <div className="space-y-2">
-                                  <Label>Spec. / Drawing / Title</Label>
-                                  <Input placeholder="Spec. Section No." value={row.specSectionNo} onChange={e => handleRowChange(row.id, 'specSectionNo', e.target.value)} />
-                                  <Input placeholder="Shop/Sample Drawing No." value={row.drawingNo} onChange={e => handleRowChange(row.id, 'drawingNo', e.target.value)} />
-                                  <Textarea placeholder="Title" value={row.title} onChange={e => handleRowChange(row.id, 'title', e.target.value)} rows={2} />
+                                    <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('approved')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'approved', !!c)} /><Label>Approved</Label></div>
+                                    <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('approved_as_noted')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'approved_as_noted', !!c)} /><Label>App'd as Noted</Label></div>
+                                    <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('revise_resubmit')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'revise_resubmit', !!c)} /><Label>Revise & Resubmit</Label></div>
+                                    <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('not_approved')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'not_approved', !!c)} /><Label>Not Approved</Label></div>
                                 </div>
-                                <div className="p-4 border rounded-md">
-                                    <h4 className="font-semibold mb-2">Referred</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                        <div className="space-y-2"><Label>To</Label><Input value={row.referredTo} onChange={e => handleRowChange(row.id, 'referredTo', e.target.value)} /></div>
-                                        <div className="space-y-2"><Label>Date Sent</Label><Input type="date" value={row.dateSent} onChange={e => handleRowChange(row.id, 'dateSent', e.target.value)} /></div>
-                                        <div className="space-y-2"><Label># Copies</Label><Input type="number" value={row.numCopies} onChange={e => handleRowChange(row.id, 'numCopies', e.target.value)} /></div>
-                                        <div className="space-y-2"><Label>Date Ret'd.</Label><Input type="date" value={row.dateRetdReferred} onChange={e => handleRowChange(row.id, 'dateRetdReferred', e.target.value)} /></div>
-                                    </div>
+                              </TableCell>
+                              <TableCell><Input type="date" value={row.dateRetdAction} onChange={e => handleRowChange(row.id, 'dateRetdAction', e.target.value)} /></TableCell>
+                               <TableCell>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Contractor')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'Contractor', !!c)} /><Label>Contractor</Label></div>
+                                    <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Owner')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'Owner', !!c)} /><Label>Owner</Label></div>
+                                    <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Field')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'Field', !!c)} /><Label>Field</Label></div>
+                                    <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('File')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'File', !!c)} /><Label>File</Label></div>
                                 </div>
-                                 <div className="p-4 border rounded-md">
-                                    <h4 className="font-semibold mb-2">Action</h4>
-                                    <div className="flex flex-wrap gap-4 items-center">
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('approved')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'approved', !!c)} /><Label>Approved</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('approved_as_noted')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'approved_as_noted', !!c)} /><Label>App'd as Noted</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('revise_resubmit')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'revise_resubmit', !!c)} /><Label>Revise & Resubmit</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.action.includes('not_approved')} onCheckedChange={(c) => handleActionCheckboxChange(row.id, 'not_approved', !!c)} /><Label>Not Approved</Label></div>
-                                        <div className="space-y-2 flex-1 min-w-[150px]"><Label className="sr-only">Date Ret'd Action</Label><Input type="date" value={row.dateRetdAction} onChange={e => handleRowChange(row.id, 'dateRetdAction', e.target.value)} /></div>
-                                    </div>
-                                </div>
-                                <div className="p-4 border rounded-md">
-                                    <h4 className="font-semibold mb-2">Copies To</h4>
-                                     <div className="flex flex-wrap gap-4">
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Contractor')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'Contractor', !!c)} /><Label>Contractor</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Owner')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'Owner', !!c)} /><Label>Owner</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('Field')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'Field', !!c)} /><Label>Field</Label></div>
-                                        <div className="flex items-center gap-2"><Checkbox checked={row.copiesTo.includes('File')} onCheckedChange={(c) => handleCopiesCheckboxChange(row.id, 'File', !!c)} /><Label>File</Label></div>
-                                     </div>
-                                </div>
-
-                             </CardContent>
-                              <Button variant="destructive" size="icon" className="absolute top-2 right-2" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button>
-                           </Card>
-                        ))}
+                              </TableCell>
+                              <TableCell>
+                                <Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
+
 
                     <div className="flex justify-between items-center mt-6">
                         <Button onClick={addRow} variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
