@@ -146,7 +146,7 @@ const UploadForm = ({ category }: { category: string }) => {
                             path: 'uploadedFiles',
                             operation: 'create',
                             requestResourceData: recordData,
-                        } satisfies SecurityRuleContext);
+                        });
                         errorEmitter.emit('permission-error', permissionError);
                          setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, progress: 0 } : up));
                     }

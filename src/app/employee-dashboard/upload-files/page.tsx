@@ -108,7 +108,7 @@ const UploadForm = ({ category }: { category: string }) => {
                      const permissionError = new FirestorePermissionError({
                         path: `uploads/${currentUser.record}/${upload.file?.name}`,
                         operation: 'write',
-                    } satisfies SecurityRuleContext);
+                    });
                     errorEmitter.emit('permission-error', permissionError);
                     toast({ variant: 'destructive', title: 'Permission Error', description: 'Could not upload file. Check storage rules and network connection.' });
                 } else {
@@ -146,7 +146,7 @@ const UploadForm = ({ category }: { category: string }) => {
                             path: 'uploadedFiles',
                             operation: 'create',
                             requestResourceData: recordData,
-                        } satisfies SecurityRuleContext);
+                        });
                         errorEmitter.emit('permission-error', permissionError);
                          setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, progress: 0 } : up));
                     }
