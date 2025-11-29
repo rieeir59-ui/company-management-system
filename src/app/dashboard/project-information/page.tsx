@@ -395,7 +395,7 @@ function ProjectInformationComponent() {
           columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } },
           didDrawCell: (data) => {
               if (data.column.index === 1 && data.row.index === 0) {
-                  let checkboxY = data.cell.y + 4;
+                  let checkboxY = data.cell.y + 5;
                   projectReqOptions.forEach(opt => {
                       drawCheckbox(data.cell.x + 2, checkboxY, opt.checked);
                       doc.text(opt.label, data.cell.x + 8, checkboxY);
@@ -403,10 +403,13 @@ function ProjectInformationComponent() {
                   });
               }
           },
-          minCellHeight: projectReqOptions.length * 6 + 4
+          minCellHeight: projectReqOptions.length * 7 + 2,
       });
       yPos = doc.autoTable.previous.finalY + 10;
       
+      doc.addPage();
+      yPos = 20;
+
       addSectionTitle("Project's Cost");
       addTable([
         ['Architectural Designing:', formState.costArchitectural],
@@ -417,9 +420,6 @@ function ProjectInformationComponent() {
         ['Other:', formState.costOther],
       ]);
       
-      doc.addPage();
-      yPos = 20;
-
       addSectionTitle("Dates Concerned with Project");
       addTable([
           ['First Information about Project:', formState.dateFirstInfo],
@@ -448,6 +448,9 @@ function ProjectInformationComponent() {
           ["Existing Structure's Drawings:", formState.ownerExistingDrawings],
       ]);
 
+      doc.addPage();
+      yPos = 20;
+
       addSectionTitle("Compensation");
       addTable([
         ['Initial Payment:', formState.compInitialPayment],
@@ -461,9 +464,6 @@ function ProjectInformationComponent() {
         ['Reimbursable Expenses:', formState.compReimbursable],
         ['Other:', formState.compOther],
       ]);
-
-      doc.addPage();
-      yPos = 20;
 
       addSectionTitle("Consultants");
       const consultantBody = consultantTypes.map(type => [
@@ -482,6 +482,9 @@ function ProjectInformationComponent() {
       });
       yPos = doc.autoTable.previous.finalY + 10;
       
+      doc.addPage();
+      yPos = 20;
+
       addSectionTitle("Requirements");
       const reqsBody = residenceRequirements.map(req => [
           req,
@@ -748,5 +751,3 @@ export default function ProjectInformationPage() {
         </Suspense>
     )
 }
-
-    
