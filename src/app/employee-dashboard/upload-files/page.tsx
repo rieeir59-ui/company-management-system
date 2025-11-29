@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from "react";
@@ -102,7 +103,7 @@ const UploadForm = ({ category }: { category: string }) => {
             },
             (error) => {
                 console.error("Upload failed", error);
-                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, progress: 0 } : up));
+                setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, progress: 0 } : up));
                 if (error.code && error.code.includes('storage/unauthorized')) {
                      const permissionError = new FirestorePermissionError({
                         path: `uploads/${currentUser.record}/${upload.file?.name}`,
@@ -116,7 +117,6 @@ const UploadForm = ({ category }: { category: string }) => {
             () => {
                 getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
                     const recordData: any = {
-                        uploaderId: currentUser.uid,
                         employeeId: currentUser.record,
                         employeeName: currentUser.name,
                         fileName: 'Uploaded File',
@@ -249,3 +249,5 @@ export default function UploadFilesPage() {
         </div>
     );
 }
+
+    
