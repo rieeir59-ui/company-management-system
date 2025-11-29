@@ -22,8 +22,13 @@ function initializeServices() {
 
 function getFirebaseServices() {
     if (typeof window === 'undefined') {
-        // For server-side rendering, return placeholders or handle as needed
-        return { firebaseApp: null, auth: null, firestore: null, storage: null };
+        // For server-side rendering, return placeholders.
+        // This avoids trying to initialize Firebase on the server.
+        const mockApp = { name: 'mock', options: {}, automaticDataCollectionEnabled: false };
+        const mockAuth = { app: mockApp } as unknown as Auth;
+        const mockFirestore = { app: mockApp } as unknown as Firestore;
+        const mockStorage = { app: mockApp } as unknown as FirebaseStorage;
+        return { firebaseApp: mockApp as FirebaseApp, auth: mockAuth, firestore: mockFirestore, storage: mockStorage };
     }
 
     if (!firebaseApp) {
@@ -32,7 +37,10 @@ function getFirebaseServices() {
         auth = services.auth;
         firestore = services.firestore;
         storage = services.storage;
-        setPersistence(auth, browserLocalPersistence);
+        // This is a client-side only operation
+        setPersistence(auth, browserLocalPersistence).catch((error) => {
+            console.error("Error setting auth persistence:", error);
+        });
     }
     return { firebaseApp, auth, firestore, storage };
 }
