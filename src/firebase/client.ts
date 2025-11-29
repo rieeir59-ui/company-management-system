@@ -1,4 +1,3 @@
-
 'use client';
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
@@ -35,4 +34,3 @@ if (typeof window !== 'undefined' && !getApps().length) {
 
 
 export { firebaseApp, auth, firestore, storage };
-

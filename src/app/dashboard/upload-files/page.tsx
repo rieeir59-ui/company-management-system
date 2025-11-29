@@ -104,12 +104,13 @@ const UploadForm = ({ category }: { category: string }) => {
             (error) => {
                 console.error("Upload failed", error);
                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, progress: 0 } : up));
-                if (error.code && error.code.includes('storage/unauthorized')) {
+                if (error.code && (error.code.includes('storage/unauthorized') || error.code.includes('storage/retry-limit-exceeded'))) {
                      const permissionError = new FirestorePermissionError({
                         path: `uploads/${currentUser.record}/${upload.file?.name}`,
                         operation: 'write',
-                    } satisfies SecurityRuleContext);
+                    });
                     errorEmitter.emit('permission-error', permissionError);
+                    toast({ variant: 'destructive', title: 'Permission Error', description: 'Could not upload file. Check storage rules and network connection.' });
                 } else {
                      toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload file.' });
                 }
