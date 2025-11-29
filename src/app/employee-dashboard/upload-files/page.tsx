@@ -13,7 +13,7 @@ import { useCurrentUser } from "@/context/UserContext";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import { FirestorePermissionError, type SecurityRuleContext } from "@/firebase/errors";
 import { Label } from "@/components/ui/label";
 import { CreatableSelect } from '@/components/ui/creatable-select';
 import { cn } from "@/lib/utils";
@@ -107,7 +107,7 @@ const UploadForm = ({ category }: { category: string }) => {
                      const permissionError = new FirestorePermissionError({
                         path: `uploads/${currentUser.record}/${upload.file?.name}`,
                         operation: 'write',
-                    });
+                    } satisfies SecurityRuleContext);
                     errorEmitter.emit('permission-error', permissionError);
                 } else {
                      toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload file.' });
@@ -145,7 +145,7 @@ const UploadForm = ({ category }: { category: string }) => {
                             path: 'uploadedFiles',
                             operation: 'create',
                             requestResourceData: recordData,
-                        });
+                        } satisfies SecurityRuleContext);
                         errorEmitter.emit('permission-error', permissionError);
                          setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, progress: 0 } : up));
                     }

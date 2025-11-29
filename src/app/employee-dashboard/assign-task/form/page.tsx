@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -18,7 +17,7 @@ import { useCurrentUser } from '@/context/UserContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import {
   Dialog,
   DialogContent,
@@ -101,7 +100,7 @@ function AssignTaskForm() {
                         path: 'savedRecords',
                         operation: 'create',
                         requestResourceData: recordToSave,
-                    });
+                    } satisfies SecurityRuleContext);
                     errorEmitter.emit('permission-error', permissionError);
                 });
 
@@ -119,7 +118,7 @@ function AssignTaskForm() {
                     path: 'tasks',
                     operation: 'create',
                     requestResourceData: dataToSave,
-                });
+                } satisfies SecurityRuleContext);
                 errorEmitter.emit('permission-error', permissionError);
             });
     };
