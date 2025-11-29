@@ -323,10 +323,10 @@ function ProjectInformationComponent() {
 
       const drawCheckbox = (x: number, y: number, checked: boolean) => {
           doc.setLineWidth(0.2);
-          doc.rect(x, y - 3.5, 4, 4);
+          doc.rect(x, y - 3.5, 4, 4); // Draw the box outline
           if (checked) {
-              doc.setFont('helvetica', 'bold');
-              doc.text('✓', x + 0.5, y);
+              doc.setFillColor(0, 0, 0); // Set fill color to black
+              doc.rect(x, y - 3.5, 4, 4, 'F'); // Draw a filled rectangle
           }
       };
 
@@ -407,9 +407,11 @@ function ProjectInformationComponent() {
       });
       yPos = doc.autoTable.previous.finalY + 10;
       
-      doc.addPage();
-      yPos = 20;
-
+      if (yPos > pageHeight - 80) { // Check for space before adding the cost section
+          doc.addPage();
+          yPos = 20;
+      }
+      
       addSectionTitle("Project's Cost");
       addTable([
         ['Architectural Designing:', formState.costArchitectural],
@@ -419,6 +421,9 @@ function ProjectInformationComponent() {
         ['Turnkey:', formState.costTurnkey],
         ['Other:', formState.costOther],
       ]);
+      
+      doc.addPage();
+      yPos = 20;
       
       addSectionTitle("Dates Concerned with Project");
       addTable([
