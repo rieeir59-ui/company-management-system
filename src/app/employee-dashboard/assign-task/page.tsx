@@ -200,7 +200,7 @@ export default function AssignTaskPage() {
                                 <TableHead>Task Name</TableHead>
                                 <TableHead>Assigned To</TableHead>
                                 <TableHead>Assigned By</TableHead>
-                                <TableHead>Start Date</TableHead>
+                                <TableHead>Assigned Date</TableHead>
                                 <TableHead>Due Date</TableHead>
                                 <TableHead>End Date</TableHead>
                                 <TableHead>Action</TableHead>
