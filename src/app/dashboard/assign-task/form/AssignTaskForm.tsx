@@ -44,6 +44,7 @@ export default function AssignTaskForm() {
     const [taskDescription, setTaskDescription] = useState('');
     const [assignedTo, setAssignedTo] = useState('');
     const [dueDate, setDueDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [projectName, setProjectName] = useState('');
 
     useEffect(() => {
@@ -63,6 +64,7 @@ export default function AssignTaskForm() {
             taskDescription,
             assignedTo,
             dueDate,
+            endDate,
             projectName,
             assignedBy: currentUser.name,
             assignedById: currentUser.record,
@@ -111,6 +113,7 @@ export default function AssignTaskForm() {
                 setTaskDescription('');
                 setAssignedTo(employeeId || '');
                 setDueDate('');
+                setEndDate('');
                 setProjectName('');
             })
             .catch(serverError => {
@@ -151,6 +154,7 @@ export default function AssignTaskForm() {
                 ['Task Description', taskDescription],
                 ['Assigned To', assignedEmployee?.name || assignedTo],
                 ['Due Date', dueDate],
+                ['End Date', endDate],
                 ['Assigned By', currentUser?.name || 'N/A'],
             ],
             headStyles: { fillColor: [45, 95, 51] }
@@ -198,9 +202,13 @@ export default function AssignTaskForm() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-2">
+                     <div className="space-y-2">
                         <Label htmlFor="dueDate">Due Date</Label>
                         <Input id="dueDate" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="endDate">End Date</Label>
+                        <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                     </div>
                 </div>
 

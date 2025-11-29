@@ -48,6 +48,8 @@ interface Task {
   assignedTo: string;
   assignedBy: string;
   createdAt: Timestamp;
+  dueDate?: string;
+  endDate?: string;
 }
 
 function EmployeeCard({ employee }: { employee: Employee }) {
@@ -209,7 +211,9 @@ export default function AssignTaskPage() {
                                 <TableHead>Task Name</TableHead>
                                 <TableHead>Assigned To</TableHead>
                                 <TableHead>Assigned By</TableHead>
-                                <TableHead>Date</TableHead>
+                                <TableHead>Start Date</TableHead>
+                                <TableHead>Due Date</TableHead>
+                                <TableHead>End Date</TableHead>
                                 <TableHead>Action</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -220,6 +224,8 @@ export default function AssignTaskPage() {
                                     <TableCell>{getEmployeeName(task.assignedTo)}</TableCell>
                                     <TableCell>{task.assignedBy}</TableCell>
                                     <TableCell>{task.createdAt?.toDate().toLocaleDateString()}</TableCell>
+                                    <TableCell>{task.dueDate || 'N/A'}</TableCell>
+                                    <TableCell>{task.endDate || 'N/A'}</TableCell>
                                     <TableCell>
                                         <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
