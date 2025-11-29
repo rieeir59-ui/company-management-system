@@ -56,6 +56,7 @@ type TaskRecord = {
     assignedTo: string;
     assignedBy: string;
     dueDate: string;
+    endDate: string;
     status: 'not-started' | 'in-progress' | 'completed';
 };
 
@@ -309,6 +310,7 @@ export default function SavedRecordsPage() {
             assignedTo: findValue('assignedTo'),
             assignedBy: findValue('assignedBy'),
             dueDate: findValue('dueDate'),
+            endDate: findValue('endDate'),
             status: (findValue('status') as TaskRecord['status']) || 'not-started',
         };
     };
@@ -356,6 +358,7 @@ export default function SavedRecordsPage() {
                                                 <TableHead>Assigned To</TableHead>
                                                 <TableHead>Assigned By</TableHead>
                                                 <TableHead>Due Date</TableHead>
+                                                <TableHead>End Date</TableHead>
                                                 <TableHead>Status</TableHead>
                                                 <TableHead className="text-right">Actions</TableHead>
                                             </TableRow>
@@ -371,6 +374,7 @@ export default function SavedRecordsPage() {
                                                             <TableCell>{task.assignedTo}</TableCell>
                                                             <TableCell>{task.assignedBy}</TableCell>
                                                             <TableCell>{task.dueDate}</TableCell>
+                                                            <TableCell>{task.endDate}</TableCell>
                                                             <TableCell>
                                                                  <Select
                                                                     value={task.status}
@@ -396,7 +400,7 @@ export default function SavedRecordsPage() {
                                                     );
                                                 })
                                             ) : (
-                                                <TableRow><TableCell colSpan={7} className="text-center h-24">No records found.</TableCell></TableRow>
+                                                <TableRow><TableCell colSpan={8} className="text-center h-24">No records found.</TableCell></TableRow>
                                             )}
                                         </TableBody>
                                     </Table>
