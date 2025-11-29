@@ -321,6 +321,15 @@ function ProjectInformationComponent() {
           yPos = doc.autoTable.previous.finalY + 10;
       };
 
+      const drawCheckbox = (x: number, y: number, checked: boolean) => {
+          doc.setLineWidth(0.2);
+          doc.rect(x, y - 3.5, 4, 4);
+          if (checked) {
+              doc.setFont('helvetica', 'bold');
+              doc.text('✓', x + 0.5, y);
+          }
+      };
+
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -356,21 +365,47 @@ function ProjectInformationComponent() {
       ]);
       
       addSectionTitle("About Project");
-      let projectReq = [
-        formState.reqArchitectural ? '☑ Architectural Designing' : '☐ Architectural Designing',
-        formState.reqInterior ? '☑ Interior Decoration' : '☐ Interior Decoration',
-        formState.reqLandscaping ? '☑ Landscaping' : '☐ Landscaping',
-        formState.reqTurnkey ? '☑ Turnkey' : '☐ Turnkey',
-        formState.reqOther ? `☑ Other: ${formState.reqOtherText}` : '☐ Other:',
-      ].join('\n');
-      addTable([
-          ['Address:', formState.projectAboutAddress],
-          ['Project Reqt.:', projectReq],
-          ['Project Type:', formState.projectType],
-          ['Project Status:', formState.projectStatus],
-          ['Project Area:', formState.projectArea],
-          ['Special Requirements:', formState.specialRequirements],
-      ]);
+      
+      const projectReqOptions = [
+        { label: 'i. Architectural Designing', checked: formState.reqArchitectural },
+        { label: 'ii. Interior Decoration', checked: formState.reqInterior },
+        { label: 'iii. Landscaping', checked: formState.reqLandscaping },
+        { label: 'iv. Turnkey', checked: formState.reqTurnkey },
+        { label: `v. Other: ${formState.reqOtherText}`, checked: formState.reqOther },
+      ];
+
+      doc.autoTable({
+          startY: yPos,
+          theme: 'grid',
+          body: [
+            ['Address:', formState.projectAboutAddress],
+            ['Project Type:', formState.projectType],
+            ['Project Status:', formState.projectStatus],
+            ['Project Area:', formState.projectArea],
+            ['Special Requirements:', formState.specialRequirements],
+          ],
+          columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } },
+      });
+      yPos = doc.autoTable.previous.finalY;
+
+      doc.autoTable({
+          startY: yPos,
+          body: [['Project Reqt.:', '']],
+          theme: 'grid',
+          columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } },
+          didDrawCell: (data) => {
+              if (data.column.index === 1 && data.row.index === 0) {
+                  let checkboxY = data.cell.y + 4;
+                  projectReqOptions.forEach(opt => {
+                      drawCheckbox(data.cell.x + 2, checkboxY, opt.checked);
+                      doc.text(opt.label, data.cell.x + 8, checkboxY);
+                      checkboxY += 6;
+                  });
+              }
+          },
+          minCellHeight: projectReqOptions.length * 6 + 4
+      });
+      yPos = doc.autoTable.previous.finalY + 10;
       
       addSectionTitle("Project's Cost");
       addTable([
