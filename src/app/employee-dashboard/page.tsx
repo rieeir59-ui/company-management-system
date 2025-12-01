@@ -8,19 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
-import { collection, query, where, onSnapshot, Timestamp, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, onSnapshot, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { CheckCircle2, Clock, XCircle, Briefcase } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Trash2, Save, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { addDoc } from 'firebase/firestore';
 import { useEmployees } from '@/context/EmployeeContext';
 import { type Employee } from '@/lib/employees';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -101,7 +99,6 @@ const StatCard = ({ title, value, icon }: { title: string, value: number, icon: 
 function EmployeeDashboardComponent() {
   const { user: currentUser, isUserLoading } = useCurrentUser();
   const { toast } = useToast();
-  const { firestore, auth } = useFirebase();
   const { employees } = useEmployees();
   const searchParams = useSearchParams();
   
@@ -146,72 +143,10 @@ function EmployeeDashboardComponent() {
         const projectStart = parseISO(row.startDate);
         const projectEnd = parseISO(row.endDate);
         
-        // Check for overlap
         return projectStart <= scheduleEnd && projectEnd >= scheduleStart;
     });
 }, [rows, schedule.start, schedule.end]);
-
-  useEffect(() => {
-    if (!firestore || !auth) {
-        setIsLoadingTasks(false);
-        return;
-    }
-
-    const authUnsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user && displayUser) {
-            setIsLoadingTasks(true);
-            const tasksCollection = collection(firestore, 'tasks');
-            const q = query(
-                tasksCollection, 
-                where('assignedTo', '==', displayUser.record)
-            );
-
-            const firestoreUnsubscribe = onSnapshot(q, (querySnapshot) => {
-                const fetchedTasks: Project[] = [];
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.status !== 'completed') {
-                        fetchedTasks.push({
-                            id: doc.id,
-                            projectName: data.projectName || '',
-                            taskName: data.taskName || '',
-                            taskDescription: data.taskDescription || '',
-                            status: data.status || 'not-started',
-                            dueDate: data.dueDate || '',
-                            assignedBy: data.assignedBy || 'N/A'
-                        });
-                    }
-                });
-                setProjects(fetchedTasks);
-                setIsLoadingTasks(false);
-            }, (error) => {
-                console.error("Error fetching tasks: ", error);
-                const permissionError = new FirestorePermissionError({
-                    path: `tasks`,
-                    operation: 'list'
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "Could not fetch assigned tasks.",
-                });
-                setIsLoadingTasks(false);
-            });
-
-            // Return the cleanup function for the Firestore listener
-            return () => firestoreUnsubscribe();
-        } else {
-            // No user is signed in.
-            setProjects([]);
-            setIsLoadingTasks(false);
-        }
-    });
-
-    // Return the cleanup function for the auth listener
-    return () => authUnsubscribe();
-  }, [firestore, auth, displayUser, toast]);
-
+    
     const projectStats = useMemo(() => {
         const source = filteredRows;
         const total = source.length;
@@ -221,34 +156,6 @@ function EmployeeDashboardComponent() {
         return { total, completed, inProgress, notStarted };
     }, [filteredRows]);
     
-  
-  const handleStatusChange = async (taskId: string, newStatus: Project['status']) => {
-    if (!firestore) return;
-    if (!isOwner) {
-        toast({
-            variant: "destructive",
-            title: "Permission Denied",
-            description: "You can only change the status of your own tasks.",
-        });
-        return;
-    }
-
-    const taskRef = doc(firestore, 'tasks', taskId);
-    try {
-      await updateDoc(taskRef, { status: newStatus });
-      toast({
-        title: 'Status Updated',
-        description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
-      });
-    } catch (serverError) {
-      const permissionError = new FirestorePermissionError({
-        path: `tasks/${taskId}`,
-        operation: 'update',
-        requestResourceData: { status: newStatus }
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    }
-  };
 
   const handleRowChange = (id: number, field: keyof ProjectRow, value: any) => {
       setRows(rows.map(row => (row.id === id ? { ...row, [field]: value } : row)));
@@ -260,82 +167,6 @@ function EmployeeDashboardComponent() {
 
   const removeRow = (id: number) => {
       setRows(rows.filter(row => row.id !== id));
-  };
-
-  const handleSave = () => {
-      if (!firestore || !currentUser) {
-          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-          return;
-      }
-
-      const dataToSave = {
-          employeeId: currentUser.record,
-          employeeName: currentUser.name,
-          fileName: "My Projects",
-          projectName: `Projects for ${currentUser.name}`,
-          data: {
-              category: 'My Projects',
-              schedule,
-              projects: rows,
-              remarks,
-          },
-          createdAt: serverTimestamp(),
-      };
-
-      addDoc(collection(firestore, 'savedRecords'), dataToSave)
-          .then(() => toast({ title: 'Record Saved', description: "Your project records have been saved." }))
-          .catch(serverError => {
-              const permissionError = new FirestorePermissionError({
-                  path: `savedRecords`,
-                  operation: 'create',
-                  requestResourceData: dataToSave,
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          });
-  };
-
-  const handleDownload = () => {
-      const doc = new jsPDF();
-      const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-      const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
-      let yPos = 20;
-
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Project Overview for ${displayUser?.name || 'Employee'}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-      yPos += 15;
-
-      doc.setFontSize(10);
-      (doc as any).autoTable({
-          startY: yPos, theme: 'plain', body: [
-              [`Work Schedule Start: ${schedule.start || 'N/A'}`, `Work Schedule End: ${schedule.end || 'N/A'}`]
-          ]
-      });
-      yPos = (doc as any).autoTable.previous.finalY + 10;
-      
-      (doc as any).autoTable({
-          head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
-          body: filteredRows.map(row => [row.projectName, row.detail, row.status, row.startDate, row.endDate]),
-          startY: yPos, theme: 'grid'
-      });
-      yPos = (doc as any).autoTable.previous.finalY + 10;
-
-      doc.setFont('helvetica', 'bold');
-      doc.text('Remarks:', 14, yPos);
-      yPos += 7;
-      doc.setFont('helvetica', 'normal');
-      doc.text(doc.splitTextToSize(remarks, doc.internal.pageSize.width - 28), 14, yPos);
-      
-      const pageCount = (doc as any).internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
-      }
-
-
-      doc.save(`${displayUser?.name}_projects.pdf`);
-      toast({ title: 'Download Started', description: 'Your project PDF is being generated.' });
   };
   
   if (isUserLoading || !displayUser) {
@@ -399,7 +230,6 @@ function EmployeeDashboardComponent() {
                                     <TableCell>
                                         <Select
                                             value={project.status}
-                                            onValueChange={(newStatus: Project['status']) => handleStatusChange(project.id, newStatus)}
                                             disabled={!isOwner}
                                         >
                                             <SelectTrigger className="w-[180px]">
@@ -510,10 +340,6 @@ function EmployeeDashboardComponent() {
                             <Textarea id="remarks" value={remarks} onChange={e => setRemarks(e.target.value)} disabled={!isOwner} />
                         </div>
                         
-                        <div className="flex justify-end gap-4 mt-8">
-                            {isOwner && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4"/>Save Record</Button>}
-                            <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4"/>Download PDF</Button>
-                        </div>
                     </CardContent>
                 </Card>
             </div>

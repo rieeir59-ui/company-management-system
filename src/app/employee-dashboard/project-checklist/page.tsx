@@ -7,13 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Download, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase/provider';
-import { addDoc, collection, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useCurrentUser } from '@/context/UserContext';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { useRecords } from '@/context/RecordContext';
 
 const checklistData = {
   predesign: {
@@ -260,73 +259,57 @@ function ProjectChecklistComponent() {
     const { toast } = useToast();
     const searchParams = useSearchParams();
     const recordId = searchParams.get('id');
+    const { addRecord, updateRecord, getRecordById } = useRecords();
 
     const [checkedItems, setCheckedItems] = useState<ChecklistState>(initializeState());
     const [projectName, setProjectName] = useState('');
     const [architectName, setArchitectName] = useState('');
     const [projectNo, setProjectNo] = useState('');
     const [projectDate, setProjectDate] = useState('');
-    const [isLoading, setIsLoading] = useState(!!recordId);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const { firestore } = useFirebase();
     const { user: currentUser } = useCurrentUser();
 
     useEffect(() => {
-        if (recordId && firestore) {
-            const fetchRecord = async () => {
-                setIsLoading(true);
-                try {
-                    const docRef = doc(firestore, 'savedRecords', recordId);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        const record = docSnap.data();
-                        
-                        setProjectName(record.projectName || '');
-                        
-                        const headerInfo = record.data?.find((d: any) => d.category === 'Project Header');
-                        if (headerInfo) {
-                            setArchitectName(headerInfo.architectName || '');
-                            setProjectNo(headerInfo.projectNo || '');
-                            setProjectDate(headerInfo.projectDate || '');
-                        }
-
-                        const newCheckedState = initializeState();
-                        record.data?.forEach((section: any) => {
-                             for (const mainKey in checklistData) {
-                                const mainSection = checklistData[mainKey as keyof typeof checklistData];
-                                for (const subKey in mainSection.sections) {
-                                    const subSection = mainSection.sections[subKey as keyof typeof mainSection.sections];
-                                    if (`${mainSection.title} - ${subSection.title}` === section.category) {
-                                        section.items.forEach((savedItem: string) => {
-                                            const itemIndex = subSection.items.indexOf(savedItem);
-                                            if (itemIndex > -1) {
-                                                newCheckedState[mainKey][subKey][itemIndex] = true;
-                                            }
-                                        });
-                                    }
-                                }
-                            }
-                        });
-                        setCheckedItems(newCheckedState);
-                    } else {
-                        toast({ variant: "destructive", title: "Error", description: "Record not found."});
-                    }
-                } catch (e) {
-                     toast({ variant: "destructive", title: "Error", description: "Failed to load record."});
-                     console.error("Error fetching document:", e);
-                } finally {
-                    setIsLoading(false);
+        if (recordId) {
+            const record = getRecordById(recordId);
+            if (record && record.data) {
+                setProjectName(record.projectName || '');
+                const headerInfo = record.data.find((d: any) => d.category === 'Project Header');
+                if (headerInfo) {
+                    setArchitectName(headerInfo.architectName || '');
+                    setProjectNo(headerInfo.projectNo || '');
+                    setProjectDate(headerInfo.projectDate || '');
                 }
-            };
-            fetchRecord();
-        } else {
-            setIsLoading(false);
+
+                const newCheckedState = initializeState();
+                record.data.forEach((section: any) => {
+                    for (const mainKey in checklistData) {
+                        const mainSection = checklistData[mainKey as keyof typeof checklistData];
+                        for (const subKey in mainSection.sections) {
+                            const subSection = mainSection.sections[subKey as keyof typeof mainSection.sections];
+                            if (`${mainSection.title} - ${subSection.title}` === section.category) {
+                                section.items.forEach((savedItem: string) => {
+                                    const itemIndex = subSection.items.indexOf(savedItem);
+                                    if (itemIndex > -1) {
+                                        newCheckedState[mainKey][subKey][itemIndex] = true;
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+                setCheckedItems(newCheckedState);
+            } else {
+                 toast({ variant: "destructive", title: "Error", description: "Record not found."});
+            }
         }
-    }, [recordId, firestore, toast]);
+        setIsLoading(false);
+    }, [recordId, getRecordById, toast]);
 
     const handleCheckboxChange = (mainKey: string, subKey: string, itemIndex: number, checked: boolean) => {
         setCheckedItems(prevState => {
-            const newState = JSON.parse(JSON.stringify(prevState));
+            const newState = JSON.parse(JSON.stringify(prevState)); // Deep copy
             newState[mainKey][subKey][itemIndex] = checked;
             return newState;
         });
@@ -348,10 +331,6 @@ function ProjectChecklistComponent() {
     };
 
     const handleSave = async () => {
-        if (!firestore) {
-            toast({ variant: "destructive", title: "Error", description: "Database not available."});
-            return;
-        }
         if (!currentUser) {
             toast({ variant: "destructive", title: "Error", description: "You must be logged in to save."});
             return;
@@ -382,34 +361,12 @@ function ProjectChecklistComponent() {
             fileName: 'Project Checklist',
             projectName: projectName || 'Untitled Project',
             data: selectedDataForSave,
-            createdAt: serverTimestamp(),
         };
 
-        try {
-            if (recordId) {
-                const docRef = doc(firestore, 'savedRecords', recordId);
-                await updateDoc(docRef, {
-                    projectName: projectName || 'Untitled Project',
-                    data: selectedDataForSave,
-                });
-                 toast({
-                    title: "Record Updated",
-                    description: "Your project checklist has been updated.",
-                });
-            } else {
-                await addDoc(collection(firestore, 'savedRecords'), recordToSave);
-                toast({
-                    title: "Record Saved",
-                    description: "Your project checklist has been saved.",
-                });
-            }
-        } catch (error) {
-            console.error("Error saving document: ", error);
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Could not save the record. Please try again.",
-            });
+        if (recordId) {
+            updateRecord(recordId, recordToSave);
+        } else {
+            addRecord(recordToSave);
         }
     };
     
@@ -428,12 +385,10 @@ function ProjectChecklistComponent() {
             return;
         }
     
-        // Main Title
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
         doc.text('PROJECT CHECKLIST', doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
     
-        // Project Info
         let yPos = 40;
         const addHeaderLine = (label: string, value: string) => {
             doc.setFont('helvetica', 'bold');

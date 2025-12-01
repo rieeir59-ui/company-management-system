@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { UserProvider } from '@/context/UserContext';
 import { EmployeeProvider } from '@/context/EmployeeContext';
 import { FileProvider } from '@/context/FileContext';
+import { RecordProvider } from '@/context/RecordContext';
 
 export default function RootLayout({
   children,
@@ -21,7 +22,9 @@ export default function RootLayout({
         <EmployeeProvider>
           <UserProvider>
             <FileProvider>
-              {children}
+              <RecordProvider>
+                {children}
+              </RecordProvider>
             </FileProvider>
           </UserProvider>
         </EmployeeProvider>

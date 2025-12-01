@@ -5,7 +5,7 @@ import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
-import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,59 +23,9 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { cn } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useEmployees } from '@/context/EmployeeContext';
-
-
-type SavedRecordData = {
-    category: string;
-    items: (string | Record<string, any>)[];
-    [key: string]: any;
-};
-
-type SavedRecord = {
-    id: string;
-    employeeId: string;
-    employeeName: string;
-    fileName: string;
-    projectName: string;
-    createdAt: Date;
-    data: SavedRecordData[] | Record<string, any>;
-};
-
-type TaskRecord = {
-    id: string;
-    taskName: string;
-    projectName: string;
-    assignedTo: string;
-    assignedBy: string;
-    dueDate: string;
-    endDate: string;
-    status: 'not-started' | 'in-progress' | 'completed';
-};
-
-// Dummy Data
-const dummyRecords: SavedRecord[] = [
-    {id: '1', employeeId: 'EMP-004', employeeName: 'Rabiya Eman', fileName: 'Project Checklist', projectName: 'Alpha Tower', createdAt: new Date(), data: [{category: 'Checklist', items: ['Item 1', 'Item 2']}]},
-    {id: '2', employeeId: 'EMP-005', employeeName: 'Imran Abbas', fileName: 'Bill of Quantity', projectName: 'Beta Complex', createdAt: new Date(), data: [{category: 'BOQ', items: ['Cement: 100 bags']}]},
-    {id: '3', employeeId: 'EMP-004', employeeName: 'Rabiya Eman', fileName: 'Task Assignment', projectName: 'Alpha Tower - Foundation', createdAt: new Date(), data: [{category: 'Task Assignment', items: ['taskName: Foundation Work', 'assignedTo: Imran Abbas', 'status: in-progress']}]},
-];
-
-
-const StatusIcon = ({ status }: { status: TaskRecord['status'] }) => {
-    switch (status) {
-        case 'completed':
-            return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-        case 'in-progress':
-            return <Clock className="h-5 w-5 text-blue-500" />;
-        case 'not-started':
-            return <XCircle className="h-5 w-5 text-red-500" />;
-        default:
-            return null;
-    }
-};
+import { useRecords, type SavedRecord } from '@/context/RecordContext';
+import { useSearchParams } from 'next/navigation';
 
 const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
     let yPos = 20;
@@ -90,7 +40,7 @@ const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
     const headerData = [
         [`File: ${record.fileName}`],
         [`Saved by: ${record.employeeName}`],
-        [`Date: ${record.createdAt.toLocaleDateString()}`],
+        [`Date: ${new Date(record.createdAt).toLocaleDateString()}`],
     ];
 
     (doc as any).autoTable({
@@ -118,8 +68,11 @@ const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
                 let isParsed = false;
                 try {
                     if (typeof item === 'string') {
-                        parsedItem = JSON.parse(item);
-                        isParsed = true;
+                        // Check if it's a JSON string before parsing
+                        if (item.trim().startsWith('{') && item.trim().endsWith('}')) {
+                            parsedItem = JSON.parse(item);
+                            isParsed = true;
+                        }
                     } else if (typeof item === 'object' && item !== null) {
                         parsedItem = item;
                         isParsed = true;
@@ -158,7 +111,6 @@ const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
     });
 }
 
-
 const handleDownload = (record: SavedRecord) => {
     const doc = new jsPDF() as any;
     generateDefaultPdf(doc, record);
@@ -168,15 +120,20 @@ const handleDownload = (record: SavedRecord) => {
 export default function SavedRecordsPage() {
     const image = PlaceHolderImages.find(p => p.id === 'saved-records');
     const { user: currentUser, isUserLoading } = useCurrentUser();
-    const { toast } = useToast();
-    const { employees } = useEmployees();
-
-    const [records, setRecords] = useState<SavedRecord[]>(dummyRecords);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { records, isLoading, error, deleteRecord } = useRecords();
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const searchParams = useSearchParams();
+    const filterParam = searchParams.get('filter');
+
+    useEffect(() => {
+        if(filterParam) {
+            setSelectedCategory(filterParam);
+        } else {
+            setSelectedCategory(null);
+        }
+    }, [filterParam]);
 
     const openDeleteDialog = (e: React.MouseEvent, record: SavedRecord) => {
         e.stopPropagation();
@@ -186,38 +143,20 @@ export default function SavedRecordsPage() {
 
     const confirmDelete = async () => {
         if (!recordToDelete) return;
-        setRecords(prev => prev.filter(r => r.id !== recordToDelete.id));
-        toast({ title: 'Record Deleted', description: 'The record has been deleted (simulation).' });
+        deleteRecord(recordToDelete.id);
         setIsDeleteDialogOpen(false);
         setRecordToDelete(null);
     };
     
-    const handleStatusChange = async (taskId: string, newStatus: TaskRecord['status']) => {
-        setRecords(prevRecords => prevRecords.map(rec => {
-            if(rec.id === taskId) {
-                const newData = rec.data.map((d: any) => {
-                    if (d.category === 'Task Assignment') {
-                        return {
-                            ...d,
-                            items: d.items.map((item: string) => item.startsWith('status:') ? `status: ${newStatus}` : item)
-                        }
-                    }
-                    return d;
-                });
-                return {...rec, data: newData};
-            }
-            return rec;
-        }));
-
-        toast({
-            title: 'Status Updated',
-            description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
-        });
-      };
+    const myRecords = useMemo(() => {
+      if (!currentUser) return [];
+      return records.filter(rec => rec.employeeId === currentUser.record);
+    }, [records, currentUser]);
 
 
     const groupedRecords = useMemo(() => {
-        const grouped = records.reduce((acc, record) => {
+        const source = myRecords;
+        const grouped = source.reduce((acc, record) => {
             const fileName = record.fileName;
             if (!acc[fileName]) {
                 acc[fileName] = [];
@@ -233,50 +172,36 @@ export default function SavedRecordsPage() {
         });
         
         return grouped;
-    }, [records]);
+    }, [myRecords]);
 
 
     if (isLoading || isUserLoading) {
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="ml-4">Verifying access and loading records...</span>
+                <span className="ml-4">Loading your records...</span>
             </div>
         )
     }
-
-    const parseTaskData = (record: SavedRecord): TaskRecord => {
-        const items: string[] = Array.isArray(record.data) && record.data[0]?.items ? record.data[0].items : [];
-        const findValue = (key: string) => (items.find(item => item.startsWith(key))?.split(':')[1] || '').trim();
-        
-        return {
-            id: record.id,
-            taskName: findValue('taskName'),
-            projectName: record.projectName,
-            assignedTo: findValue('assignedTo'),
-            assignedBy: findValue('assignedBy'),
-            dueDate: findValue('dueDate'),
-            endDate: findValue('endDate'),
-            status: (findValue('status') as TaskRecord['status']) || 'not-started',
-        };
-    };
 
     return (
         <>
             <div className="space-y-8">
                 <DashboardPageHeader
-                    title="Saved Records"
-                    description="Access all saved project checklists and documents from all employees."
+                    title="Your Saved Records"
+                    description="Access your saved checklists, documents, and forms."
                     imageUrl={image?.imageUrl || ''}
                     imageHint={image?.imageHint || ''}
                 />
                 
-                {error ? (
-                    <Card className="text-center py-12 bg-destructive/10 border-destructive">
-                        <CardHeader><CardTitle className="text-destructive">Access Denied</CardTitle></CardHeader>
+                {error && (
+                     <Card className="text-center py-12 bg-destructive/10 border-destructive">
+                        <CardHeader><CardTitle className="text-destructive">Error</CardTitle></CardHeader>
                         <CardContent><p className="text-destructive/90">{error}</p></CardContent>
                     </Card>
-                ) : selectedCategory ? (
+                )}
+
+                {!isLoading && !error && selectedCategory ? (
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-4">
@@ -285,119 +210,61 @@ export default function SavedRecordsPage() {
                                 </Button>
                                 <div>
                                     <CardTitle>{selectedCategory}</CardTitle>
-                                    <CardDescription>All records saved as "{selectedCategory}".</CardDescription>
+                                    <CardDescription>Your saved "{selectedCategory}" records.</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent>
                              <div className="border rounded-lg">
-                                {selectedCategory === 'Task Assignment' ? (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Task Name</TableHead>
-                                                <TableHead>Project</TableHead>
-                                                <TableHead>Assigned To</TableHead>
-                                                <TableHead>Assigned By</TableHead>
-                                                <TableHead>Due Date</TableHead>
-                                                <TableHead>End Date</TableHead>
-                                                <TableHead>Status</TableHead>
-                                                <TableHead className="text-right">Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {groupedRecords[selectedCategory].length > 0 ? (
-                                                groupedRecords[selectedCategory].map(record => {
-                                                    const task = parseTaskData(record);
-                                                    return (
-                                                        <TableRow key={record.id}>
-                                                            <TableCell>{task.taskName}</TableCell>
-                                                            <TableCell>{task.projectName}</TableCell>
-                                                            <TableCell>{task.assignedTo}</TableCell>
-                                                            <TableCell>{task.assignedBy}</TableCell>
-                                                            <TableCell>{task.dueDate}</TableCell>
-                                                            <TableCell>{task.endDate}</TableCell>
-                                                            <TableCell>
-                                                                 <Select
-                                                                    value={task.status}
-                                                                    onValueChange={(newStatus: TaskRecord['status']) => handleStatusChange(task.id, newStatus)}
-                                                                >
-                                                                    <SelectTrigger className="w-[180px]">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <StatusIcon status={task.status} />
-                                                                            <SelectValue placeholder="Set status" />
-                                                                        </div>
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="not-started"><div className="flex items-center gap-2"><XCircle className="h-5 w-5 text-red-500" />Not Started</div></SelectItem>
-                                                                        <SelectItem value="in-progress"><div className="flex items-center gap-2"><Clock className="h-5 w-5 text-blue-500" />In Progress</div></SelectItem>
-                                                                        <SelectItem value="completed"><div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-500" />Completed</div></SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </TableCell>
-                                                            <TableCell className="text-right">
-                                                                <Button variant="ghost" size="icon" onClick={(e) => openDeleteDialog(e, record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })
-                                            ) : (
-                                                <TableRow><TableCell colSpan={8} className="text-center h-24">No records found.</TableCell></TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Employee Name</TableHead>
-                                                <TableHead>Project Name</TableHead>
-                                                <TableHead>Date</TableHead>
-                                                <TableHead className="text-right w-[100px]">Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {groupedRecords[selectedCategory].length > 0 ? (
-                                                groupedRecords[selectedCategory].map(record => {
-                                                    const formUrl = getFormUrlFromFileName(record.fileName, 'dashboard');
-                                                    return (
-                                                        <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
-                                                            <TableCell>{record.employeeName}</TableCell>
-                                                            <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                            <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                                                            <TableCell className="text-right">
-                                                                <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                                                    {formUrl && (
-                                                                        <Button asChild variant="ghost" size="icon">
-                                                                            <Link href={`${formUrl}?id=${record.id}`}>
-                                                                                <Edit className="h-4 w-4" />
-                                                                            </Link>
-                                                                        </Button>
-                                                                    )}
-                                                                    <Button variant="ghost" size="icon" onClick={(e) => openDeleteDialog(e, record)}>
-                                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Project Name</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right w-[100px]">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {groupedRecords[selectedCategory] && groupedRecords[selectedCategory].length > 0 ? (
+                                            groupedRecords[selectedCategory].map(record => {
+                                                const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
+                                                return (
+                                                    <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
+                                                        <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                        <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                                                {formUrl && (
+                                                                    <Button asChild variant="ghost" size="icon">
+                                                                        <Link href={`${formUrl}?id=${record.id}`}>
+                                                                            <Edit className="h-4 w-4" />
+                                                                        </Link>
                                                                     </Button>
-                                                                </div>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })
-                                            ) : (
-                                                <TableRow>
-                                                    <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
-                                                        No records found for this category.
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                )}
+                                                                )}
+                                                                <Button variant="ghost" size="icon" onClick={(e) => openDeleteDialog(e, record)}>
+                                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
+                                                    You have no saved records for this category.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
                             </div>
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {Object.entries(groupedRecords).map(([fileName, fileRecords]) => {
+                           if(fileRecords.length === 0) return null;
                            const Icon = getIconForFile(fileName);
                            return (
                             <Card 
@@ -418,6 +285,12 @@ export default function SavedRecordsPage() {
                            )
                         })}
                     </div>
+                )}
+                 {myRecords.length === 0 && !isLoading && !error && !selectedCategory && (
+                    <Card className="text-center py-12">
+                        <CardHeader><CardTitle>No Records Found</CardTitle></CardHeader>
+                        <CardContent><p className="text-muted-foreground">You haven't saved any records yet.</p></CardContent>
+                    </Card>
                 )}
             </div>
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
