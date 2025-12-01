@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { CreatableSelect } from '@/components/ui/creatable-select';
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { useFileRecords } from "@/context/FileContext";
 
 type FileUpload = {
   id: number;
@@ -37,6 +38,7 @@ const UploadForm = ({ category }: { category: string }) => {
     const [banks, setBanks] = useState<string[]>(initialBanks);
     const { toast } = useToast();
     const { user: currentUser } = useCurrentUser();
+    const { addFileRecord } = useFileRecords();
 
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
@@ -79,14 +81,27 @@ const UploadForm = ({ category }: { category: string }) => {
         
         setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0 } : up));
         
-        // Dummy upload simulation
         const interval = setInterval(() => {
             setUploads(prev => prev.map(up => {
-                if (up.id === upload.id) {
+                if (up.id === upload.id && up.isUploading) {
                     const newProgress = (up.progress || 0) + 10;
                     if (newProgress >= 100) {
                         clearInterval(interval);
-                         toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded (simulation).` });
+                        const newRecord = {
+                            id: String(Date.now()),
+                            category: category,
+                            bankName: upload.bankName,
+                            customName: upload.customName,
+                            originalName: upload.file!.name,
+                            fileType: upload.file!.type,
+                            size: upload.file!.size,
+                            createdAt: new Date(),
+                            employeeName: currentUser.name,
+                            employeeId: currentUser.record,
+                            fileUrl: URL.createObjectURL(upload.file!) 
+                        };
+                        addFileRecord(newRecord);
+                        toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
                         return { ...up, isUploading: false, progress: 100 };
                     }
                     return { ...up, progress: newProgress };

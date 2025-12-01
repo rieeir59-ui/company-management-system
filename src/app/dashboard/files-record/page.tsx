@@ -30,19 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-
-type UploadedFile = {
-    id: string;
-    category: string;
-    bankName?: string;
-    customName: string;
-    originalName: string;
-    fileType: string;
-    size: number;
-    createdAt: Date;
-    employeeName: string;
-    fileUrl?: string;
-};
+import { useFileRecords, type UploadedFile } from '@/context/FileContext';
 
 const categories = [
     { name: "Banks", icon: Landmark },
@@ -51,22 +39,13 @@ const categories = [
     { name: "Hotels", icon: Hotel }
 ];
 
-// Dummy data since we removed Firebase
-const dummyFiles: UploadedFile[] = [
-    { id: '1', category: 'Banks', bankName: 'MCB', customName: 'Q1 Report', originalName: 'q1_report_final.pdf', fileType: 'application/pdf', size: 1200000, createdAt: new Date(), employeeName: 'Rabiya Eman', fileUrl: '#' },
-    { id: '2', category: 'Residential', customName: 'Blueprint - Phase 1', originalName: 'blueprint_v2.dwg', fileType: 'image/vnd.dwg', size: 5600000, createdAt: new Date(), employeeName: 'Imran Abbas', fileUrl: '#' },
-    { id: '3', category: 'Commercial', customName: 'Tower Proposal', originalName: 'tower_proposal.docx', fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', size: 340000, createdAt: new Date(), employeeName: 'Asad', fileUrl: '#' },
-];
-
-
 export default function FilesRecordPage() {
   const image = PlaceHolderImages.find(p => p.id === 'files-record');
   const { toast } = useToast();
   const { user: currentUser } = useCurrentUser();
+  const { fileRecords, isLoading, error, updateFileRecord, deleteFileRecord } = useFileRecords();
 
   const [files, setFiles] = useState<Record<string, UploadedFile[]>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
   const [fileToDelete, setFileToDelete] = useState<UploadedFile | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -76,24 +55,13 @@ export default function FilesRecordPage() {
   const [newFileName, setNewFileName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-
   useEffect(() => {
-    setIsLoading(true);
-    if (currentUser) {
-        // Simulate fetching data
-        setTimeout(() => {
-            const groupedFiles: Record<string, UploadedFile[]> = {};
-            categories.forEach(category => {
-                groupedFiles[category.name] = dummyFiles.filter(file => file.category === category.name);
-            });
-            setFiles(groupedFiles);
-            setIsLoading(false);
-        }, 1000);
-    } else {
-        setError("You must be logged in to view records.");
-        setIsLoading(false);
-    }
-  }, [currentUser]);
+    const groupedFiles: Record<string, UploadedFile[]> = {};
+    categories.forEach(category => {
+      groupedFiles[category.name] = fileRecords.filter(file => file.category === category.name);
+    });
+    setFiles(groupedFiles);
+  }, [fileRecords]);
   
   const formatBytes = (bytes: number, decimals = 2) => {
     if (bytes === 0) return '0 Bytes';
@@ -111,15 +79,8 @@ export default function FilesRecordPage() {
   
   const confirmDelete = async () => {
     if (!fileToDelete) return;
-    // Dummy delete
-    toast({ title: 'Success', description: `File record for "${fileToDelete.customName}" deleted (simulation).` });
-    setFiles(prev => {
-        const newFiles = { ...prev };
-        if(newFiles[fileToDelete.category]) {
-            newFiles[fileToDelete.category] = newFiles[fileToDelete.category].filter(f => f.id !== fileToDelete.id);
-        }
-        return newFiles;
-    });
+    deleteFileRecord(fileToDelete.id);
+    toast({ title: 'Success', description: `File record for "${fileToDelete.customName}" deleted.` });
     setIsDeleteDialogOpen(false);
   };
   
@@ -131,15 +92,8 @@ export default function FilesRecordPage() {
 
   const confirmEdit = async () => {
     if (!fileToEdit || !newFileName) return;
-    // Dummy edit
-    toast({ title: 'Success', description: 'File name updated (simulation).' });
-    setFiles(prev => {
-        const newFiles = { ...prev };
-        if(newFiles[fileToEdit.category]) {
-            newFiles[fileToEdit.category] = newFiles[fileToEdit.category].map(f => f.id === fileToEdit.id ? {...f, customName: newFileName} : f);
-        }
-        return newFiles;
-    });
+    updateFileRecord(fileToEdit.id, { customName: newFileName });
+    toast({ title: 'Success', description: 'File name updated.' });
     setIsEditDialogOpen(false);
   };
 
@@ -210,7 +164,7 @@ export default function FilesRecordPage() {
                                             <td className="p-2 text-muted-foreground">{file.originalName}</td>
                                             <td className="p-2">{formatBytes(file.size)}</td>
                                             <td className="p-2">{file.employeeName}</td>
-                                            <td className="p-2">{file.createdAt.toLocaleDateString()}</td>
+                                            <td className="p-2">{new Date(file.createdAt).toLocaleDateString()}</td>
                                             <td className="p-2 flex gap-1 justify-end">
                                                 <Button asChild variant="ghost" size="icon">
                                                     <a href={file.fileUrl || '#'} target="_blank" rel="noopener noreferrer" download={file.originalName}>

@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { UserProvider } from '@/context/UserContext';
 import { EmployeeProvider } from '@/context/EmployeeContext';
+import { FileProvider } from '@/context/FileContext';
 
 export default function RootLayout({
   children,
@@ -19,7 +20,9 @@ export default function RootLayout({
       <body className="font-body antialiased" suppressHydrationWarning>
         <EmployeeProvider>
           <UserProvider>
+            <FileProvider>
               {children}
+            </FileProvider>
           </UserProvider>
         </EmployeeProvider>
         <Toaster />
