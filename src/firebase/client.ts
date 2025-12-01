@@ -10,46 +10,12 @@ let auth: Auth;
 let firestore: Firestore;
 let storage: FirebaseStorage;
 
-function initializeServices() {
-  const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  return {
-    firebaseApp: app,
-    auth: getAuth(app),
-    firestore: getFirestore(app),
-    storage: getStorage(app)
-  };
-}
+// Initialize Firebase
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-function getFirebaseServices() {
-    if (typeof window === 'undefined') {
-        // For server-side rendering, return placeholders.
-        // This avoids trying to initialize Firebase on the server.
-        const mockApp = { name: 'mock', options: {}, automaticDataCollectionEnabled: false };
-        const mockAuth = { app: mockApp } as unknown as Auth;
-        const mockFirestore = { app: mockApp } as unknown as Firestore;
-        const mockStorage = { app: mockApp } as unknown as FirebaseStorage;
-        return { firebaseApp: mockApp as FirebaseApp, auth: mockAuth, firestore: mockFirestore, storage: mockStorage };
-    }
-
-    if (!firebaseApp) {
-        const services = initializeServices();
-        firebaseApp = services.firebaseApp;
-        auth = services.auth;
-        firestore = services.firestore;
-        storage = services.storage;
-        // This is a client-side only operation
-        setPersistence(auth, browserLocalPersistence).catch((error) => {
-            console.error("Error setting auth persistence:", error);
-        });
-    }
-    return { firebaseApp, auth, firestore, storage };
-}
-
-const services = getFirebaseServices();
-firebaseApp = services.firebaseApp!;
-auth = services.auth!;
-firestore = services.firestore!;
-storage = services.storage!;
+const db = getFirestore(app);
+const app_storage = getStorage(app);
+const app_auth = getAuth(app);
 
 
-export { firebaseApp, auth, firestore, storage };
+export { app as firebaseApp, app_auth as auth, db as firestore, app_storage as storage };
