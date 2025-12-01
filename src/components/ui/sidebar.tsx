@@ -511,9 +511,8 @@ const SidebarMenuItem = React.forwardRef<
       className={cn("group/menu-item relative", className)}
       {...props}
     />
-  );
-});
-
+  )
+})
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
