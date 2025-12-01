@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import { useFirebase } from '@/firebase/provider';
-import { collection, query, where, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, type Timestamp, FirestoreError, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -32,6 +33,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/context/EmployeeContext';
+
 
 type SavedRecordData = {
     category: string;
@@ -166,6 +168,7 @@ export default function SavedRecordsPage() {
     const { firestore, auth } = useFirebase();
     const { user: currentUser, isUserLoading } = useCurrentUser();
     const { toast } = useToast();
+    const { employees } = useEmployees();
 
     const [records, setRecords] = useState<SavedRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -174,26 +177,21 @@ export default function SavedRecordsPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-     useEffect(() => {
-        if (isUserLoading) {
-            setIsLoading(true);
-            return;
-        }
-
-        if (!firestore || !auth) {
-            setIsLoading(false);
-            setError("Firestore is not available.");
-            return;
-        }
-
+    useEffect(() => {
+        if (!firestore || !auth) return;
+        
         const authUnsubscribe = onAuthStateChanged(auth, user => {
             if (user && currentUser) {
+                const isAuthorized = ['admin', 'software-engineer', 'ceo'].includes(currentUser.department);
+                if (!isAuthorized) {
+                    setIsLoading(false);
+                    setError("You do not have permission to view this page.");
+                    setRecords([]);
+                    return;
+                }
+
                 const recordsCollection = collection(firestore, 'savedRecords');
-                const q = query(
-                    recordsCollection,
-                    where('employeeId', '==', currentUser.record),
-                    orderBy('createdAt', 'desc')
-                );
+                const q = query(recordsCollection, orderBy('createdAt', 'desc'));
 
                 const firestoreUnsubscribe = onSnapshot(q,
                     (querySnapshot) => {
@@ -206,26 +204,27 @@ export default function SavedRecordsPage() {
                         setIsLoading(false);
                     },
                     (serverError: FirestoreError) => {
-                        console.error("Firestore Error:", serverError);
                         const permissionError = new FirestorePermissionError({
-                            path: 'savedRecords', // Simplified path
-                            operation: 'list'
+                            path: `savedRecords`,
+                            operation: 'list',
                         });
                         errorEmitter.emit('permission-error', permissionError);
-                        setError(permissionError.message);
+                        setError("Could not fetch records. You might not have the required permissions.");
                         setIsLoading(false);
                     }
                 );
                 return () => firestoreUnsubscribe();
+
             } else if (!isUserLoading) {
-                setIsLoading(false);
-                setError("You must be logged in to view your records.");
+                 setIsLoading(false);
+                 setError("You must be logged in to view records.");
             }
         });
-
+        
         return () => authUnsubscribe();
+            
     }, [firestore, auth, currentUser, isUserLoading]);
-
+    
     const openDeleteDialog = (e: React.MouseEvent, record: SavedRecord) => {
         e.stopPropagation();
         setRecordToDelete(record);
@@ -250,7 +249,7 @@ export default function SavedRecordsPage() {
             setRecordToDelete(null);
         }
     };
-
+    
     const handleStatusChange = async (taskId: string, newStatus: TaskRecord['status']) => {
         if (!firestore) return;
         const taskRef = doc(firestore, 'tasks', taskId);
@@ -268,8 +267,9 @@ export default function SavedRecordsPage() {
           });
           errorEmitter.emit('permission-error', permissionError);
         }
-    };
-    
+      };
+
+
     const groupedRecords = useMemo(() => {
         const grouped = records.reduce((acc, record) => {
             const fileName = record.fileName;
@@ -290,15 +290,15 @@ export default function SavedRecordsPage() {
     }, [records]);
 
 
-    if (isLoading) {
+    if (isLoading || isUserLoading) {
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="ml-4">Loading your records...</span>
+                <span className="ml-4">Verifying access and loading records...</span>
             </div>
         )
     }
-    
+
     const parseTaskData = (record: SavedRecord): TaskRecord => {
         const items: string[] = Array.isArray(record.data) && record.data[0]?.items ? record.data[0].items : [];
         const findValue = (key: string) => (items.find(item => item.startsWith(key))?.split(':')[1] || '').trim();
@@ -320,21 +320,17 @@ export default function SavedRecordsPage() {
             <div className="space-y-8">
                 <DashboardPageHeader
                     title="Saved Records"
-                    description="Access your saved project checklists and other documents."
+                    description="Access all saved project checklists and documents from all employees."
                     imageUrl={image?.imageUrl || ''}
                     imageHint={image?.imageHint || ''}
                 />
                 
-                 {error ? (
-                     <Card className="text-center py-12 bg-destructive/10 border-destructive">
-                        <CardHeader>
-                            <CardTitle className="text-destructive">Error</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-destructive/90">{error}</p>
-                        </CardContent>
+                {error ? (
+                    <Card className="text-center py-12 bg-destructive/10 border-destructive">
+                        <CardHeader><CardTitle className="text-destructive">Access Denied</CardTitle></CardHeader>
+                        <CardContent><p className="text-destructive/90">{error}</p></CardContent>
                     </Card>
-                 ) : selectedCategory ? (
+                ) : selectedCategory ? (
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-4">
@@ -343,14 +339,14 @@ export default function SavedRecordsPage() {
                                 </Button>
                                 <div>
                                     <CardTitle>{selectedCategory}</CardTitle>
-                                    <CardDescription>Your saved records for "{selectedCategory}".</CardDescription>
+                                    <CardDescription>All records saved as "{selectedCategory}".</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent>
                              <div className="border rounded-lg">
                                 {selectedCategory === 'Task Assignment' ? (
-                                     <Table>
+                                    <Table>
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Task Name</TableHead>
@@ -408,6 +404,7 @@ export default function SavedRecordsPage() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
+                                                <TableHead>Employee Name</TableHead>
                                                 <TableHead>Project Name</TableHead>
                                                 <TableHead>Date</TableHead>
                                                 <TableHead className="text-right w-[100px]">Actions</TableHead>
@@ -416,9 +413,10 @@ export default function SavedRecordsPage() {
                                         <TableBody>
                                             {groupedRecords[selectedCategory].length > 0 ? (
                                                 groupedRecords[selectedCategory].map(record => {
-                                                    const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
+                                                    const formUrl = getFormUrlFromFileName(record.fileName, 'dashboard');
                                                     return (
                                                         <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
+                                                            <TableCell>{record.employeeName}</TableCell>
                                                             <TableCell className="font-medium">{record.projectName}</TableCell>
                                                             <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
                                                             <TableCell className="text-right">
@@ -440,7 +438,7 @@ export default function SavedRecordsPage() {
                                                 })
                                             ) : (
                                                 <TableRow>
-                                                    <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
+                                                    <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
                                                         No records found for this category.
                                                     </TableCell>
                                                 </TableRow>
@@ -451,7 +449,7 @@ export default function SavedRecordsPage() {
                             </div>
                         </CardContent>
                     </Card>
-                 ) : (
+                ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {Object.entries(groupedRecords).map(([fileName, fileRecords]) => {
                            const Icon = getIconForFile(fileName);
