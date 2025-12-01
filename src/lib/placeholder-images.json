@@ -266,9 +266,9 @@
     },
     {
       "id": "upload-files",
-      "description": "An upload cloud icon.",
-      "imageUrl": "https://images.unsplash.com/photo-1585432959445-38b02c17658a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx1cGxvYWQlMjBjbG91ZHxlbnwwfHx8fDE3NjQxMDQwODZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "upload cloud"
+      "description": "An organized set of architectural blueprints and documents on a desk.",
+      "imageUrl": "https://images.unsplash.com/photo-1593106578502-28fa7475d160?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhcmNoaXRlY3R1cmUlMjBkb2N1bWVudHN8ZW58MHx8fHwxNzE2NDAxODU4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "architectural documents"
     },
     {
       "id": "files-record",

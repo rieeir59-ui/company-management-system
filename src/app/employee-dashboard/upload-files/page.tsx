@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from "react";
@@ -9,12 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { FileUp, PlusCircle, Trash2, Building, Home, Hotel, Landmark } from "lucide-react";
-import { useFirebase } from "@/firebase/provider";
 import { useCurrentUser } from "@/context/UserContext";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError, type SecurityRuleContext } from "@/firebase/errors";
 import { Label } from "@/components/ui/label";
 import { CreatableSelect } from '@/components/ui/creatable-select';
 import { cn } from "@/lib/utils";
@@ -42,9 +36,7 @@ const UploadForm = ({ category }: { category: string }) => {
     const [uploads, setUploads] = useState<FileUpload[]>([{ id: 1, file: null, customName: '', bankName: '', isUploading: false, progress: 0 }]);
     const [banks, setBanks] = useState<string[]>(initialBanks);
     const { toast } = useToast();
-    const { firestore, firebaseApp } = useFirebase();
     const { user: currentUser } = useCurrentUser();
-    const storage = getStorage(firebaseApp);
 
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
@@ -80,79 +72,35 @@ const UploadForm = ({ category }: { category: string }) => {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a bank name for the Banks category.' });
             return;
         }
-        if (!firestore || !currentUser || !storage) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in and services must be available.' });
+        if (!currentUser) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
             return;
         }
         
         setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0 } : up));
         
-        const metadata = {
-          customMetadata: {
-            uploaderId: currentUser.uid
-          }
-        };
-
-        const storageRef = ref(storage, `uploads/${currentUser.record}/${Date.now()}-${upload.file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, upload.file, metadata);
-
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress: progress } : up));
-            },
-            (error) => {
-                console.error("Upload failed", error);
-                setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, progress: 0 } : up));
-                if (error.code && (error.code.includes('storage/unauthorized') || error.code.includes('storage/retry-limit-exceeded'))) {
-                     const permissionError = new FirestorePermissionError({
-                        path: `uploads/${currentUser.record}/${upload.file?.name}`,
-                        operation: 'write',
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                    toast({ variant: 'destructive', title: 'Permission Error', description: 'Could not upload file. Check storage rules and network connection.' });
-                } else {
-                     toast({ variant: 'destructive', title: 'Upload Failed', description: error.message || 'Could not upload file.' });
+        // Dummy upload simulation
+        const interval = setInterval(() => {
+            setUploads(prev => prev.map(up => {
+                if (up.id === upload.id) {
+                    const newProgress = (up.progress || 0) + 10;
+                    if (newProgress >= 100) {
+                        clearInterval(interval);
+                         toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded (simulation).` });
+                        return { ...up, isUploading: false, progress: 100 };
+                    }
+                    return { ...up, progress: newProgress };
                 }
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
-                    const recordData: any = {
-                        employeeId: currentUser.record,
-                        employeeName: currentUser.name,
-                        fileName: 'Uploaded File',
-                        category: category,
-                        customName: upload.customName,
-                        originalName: upload.file?.name,
-                        fileType: upload.file?.type,
-                        size: upload.file?.size,
-                        fileUrl: downloadURL,
-                        createdAt: serverTimestamp(),
-                    };
+                return up;
+            }));
+        }, 200);
 
-                    if (category === 'Banks' && upload.bankName) {
-                        recordData.bankName = upload.bankName;
-                    }
-
-                    try {
-                        await addDoc(collection(firestore, 'uploadedFiles'), recordData);
-                        toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
-                        setUploads(prev => prev.filter(up => up.id !== upload.id));
-                        if (uploads.length === 1) {
-                            setUploads([{ id: 1, file: null, customName: '', bankName: '', isUploading: false, progress: 0 }]);
-                        }
-                    } catch(e) {
-                         const permissionError = new FirestorePermissionError({
-                            path: 'uploadedFiles',
-                            operation: 'create',
-                            requestResourceData: recordData,
-                        });
-                        errorEmitter.emit('permission-error', permissionError);
-                         setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, progress: 0 } : up));
-                    }
-                });
+        setTimeout(() => {
+             setUploads(prev => prev.filter(up => up.id !== upload.id));
+             if (uploads.length === 1) {
+                setUploads([{ id: 1, file: null, customName: '', bankName: '', isUploading: false, progress: 0 }]);
             }
-        );
+        }, 3000);
     };
 
     return (
@@ -186,7 +134,7 @@ const UploadForm = ({ category }: { category: string }) => {
                         <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} />
                     </div>
                     
-                     <div className="lg:col-span-3">
+                    <div className="lg:col-span-3">
                         {upload.isUploading && <Progress value={upload.progress} className="w-full h-2 mb-2" />}
                         <Button onClick={() => handleUpload(upload)} className="w-full" disabled={!upload.file || upload.isUploading}>
                             <FileUp className="mr-2 h-4 w-4" />
@@ -240,9 +188,7 @@ export default function UploadFilesPage() {
                     {selectedCategory && (
                         <div className="mt-8">
                              <h2 className="text-2xl font-bold mb-4">Upload to {selectedCategory}</h2>
-                             <UploadForm 
-                                category={selectedCategory} 
-                             />
+                             <UploadForm category={selectedCategory} />
                         </div>
                     )}
                 </CardContent>
