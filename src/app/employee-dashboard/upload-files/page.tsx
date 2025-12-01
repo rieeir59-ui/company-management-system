@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +23,7 @@ type FileUpload = {
   bankName?: string;
   isUploading?: boolean;
   progress?: number;
-  isUploaded?: boolean; // Flag to prevent re-adding
+  isUploaded?: boolean;
 };
 
 const categories = [
@@ -41,44 +41,46 @@ const UploadForm = ({ category }: { category: string }) => {
     const { user: currentUser } = useCurrentUser();
     const { addFileRecord } = useFileRecords();
 
+    const handleSingleFileUpload = useCallback((upload: FileUpload) => {
+        if (!upload.file || !currentUser || upload.isUploaded) return;
+
+        const newRecord = {
+            id: String(Date.now()), // Ensure unique ID
+            category: category,
+            bankName: upload.bankName,
+            customName: upload.customName,
+            originalName: upload.file!.name,
+            fileType: upload.file!.type,
+            size: upload.file!.size,
+            createdAt: new Date(),
+            employeeName: currentUser.name,
+            employeeId: currentUser.record,
+            fileUrl: URL.createObjectURL(upload.file!)
+        };
+        addFileRecord(newRecord);
+        
+        // Mark as uploaded immediately to prevent re-adding
+        setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploaded: true } : up));
+
+        toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
+
+        // Set a timeout to remove the completed upload from the UI
+        setTimeout(() => {
+            setUploads(prev => {
+                const remaining = prev.filter(up => up.id !== upload.id);
+                return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '', isUploading: false, progress: 0, isUploaded: false }];
+            });
+        }, 2000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [category, currentUser, toast]);
+
     useEffect(() => {
         uploads.forEach(upload => {
-            // Only add the record if it has just completed and hasn't been marked as uploaded yet.
-            if (upload.progress === 100 && upload.file && currentUser && !upload.isUploaded) {
-                
-                const newRecord = {
-                    id: String(Date.now()), // Ensure unique ID
-                    category: category,
-                    bankName: upload.bankName,
-                    customName: upload.customName,
-                    originalName: upload.file!.name,
-                    fileType: upload.file!.type,
-                    size: upload.file!.size,
-                    createdAt: new Date(),
-                    employeeName: currentUser.name,
-                    employeeId: currentUser.record,
-                    fileUrl: URL.createObjectURL(upload.file!) 
-                };
-                addFileRecord(newRecord);
-                
-                // Mark as uploaded immediately to prevent re-adding
-                setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploaded: true } : up));
-
-                toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
-                
-                // Set a timeout to remove the completed upload from the UI
-                setTimeout(() => {
-                    setUploads(prev => {
-                        const remaining = prev.filter(up => up.id !== upload.id);
-                        return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '', isUploading: false, progress: 0, isUploaded: false }];
-                    });
-                }, 2000);
+            if (upload.progress === 100 && !upload.isUploaded) {
+                handleSingleFileUpload(upload);
             }
         });
-    // We remove addFileRecord from dependencies to avoid re-triggering on its change, which is stable anyway.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [uploads, category, currentUser, toast]);
-
+    }, [uploads, handleSingleFileUpload]);
 
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
