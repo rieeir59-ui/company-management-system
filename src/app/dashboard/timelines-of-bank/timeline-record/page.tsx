@@ -5,10 +5,10 @@ import { useEffect, useState } from 'react';
 import { useFirebase } from '@/firebase/provider';
 import { collection, query, where, getDocs, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc } from 'firebase/firestore';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, Edit, Trash2 } from 'lucide-react';
+import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
