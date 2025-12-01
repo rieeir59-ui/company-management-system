@@ -32,7 +32,7 @@ import {
   Briefcase,
   Book,
   File,
-  ClipboardList,
+  ClipboardCheck,
   UserCheck,
   Building,
   FilePlus,
@@ -65,7 +65,6 @@ import {
   Save,
   Eye,
   Archive,
-  ClipboardCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
