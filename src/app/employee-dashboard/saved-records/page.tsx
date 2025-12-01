@@ -167,6 +167,7 @@ export default function SavedRecordsPage() {
     const { firestore } = useFirebase();
     const { user: currentUser, isUserLoading } = useCurrentUser();
     const { toast } = useToast();
+    const { employees } = useEmployees();
 
     const [records, setRecords] = useState<SavedRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -182,7 +183,7 @@ export default function SavedRecordsPage() {
         }
         if (!firestore || !currentUser) {
             setIsLoading(false);
-            setError("Authentication is required.");
+            setError("You must be logged in to view records.");
             return;
         }
 
@@ -191,10 +192,8 @@ export default function SavedRecordsPage() {
         
         let q;
         if (isAuthorized) {
-            // Admins can see all records
             q = query(recordsCollection, orderBy('createdAt', 'desc'));
         } else {
-            // Regular users only see their own records
             q = query(recordsCollection, where('employeeId', '==', currentUser.record), orderBy('createdAt', 'desc'));
         }
 
