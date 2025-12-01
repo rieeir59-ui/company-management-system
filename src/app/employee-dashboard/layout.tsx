@@ -2,7 +2,6 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import EmployeeDashboardSidebar from "@/components/employee-dashboard/sidebar";
 import { Header } from "@/components/employee-dashboard/header";
-import { EmployeeProvider } from "@/context/EmployeeContext";
 
 export default function EmployeeDashboardLayout({
   children,
@@ -10,7 +9,6 @@ export default function EmployeeDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <EmployeeProvider>
       <SidebarProvider>
           <EmployeeDashboardSidebar />
           <SidebarInset>
@@ -20,6 +18,5 @@ export default function EmployeeDashboardLayout({
               </div>
           </SidebarInset>
       </SidebarProvider>
-    </EmployeeProvider>
   );
 }
