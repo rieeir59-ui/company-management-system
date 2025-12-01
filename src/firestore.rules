@@ -2,24 +2,57 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isOneOf(value, roles) {
+      return value in roles;
+    }
+
+    function isAdmin() {
+      return request.auth != null && isOneOf(request.auth.token.department, ['admin', 'software-engineer', 'ceo']);
+    }
+
     // USERS COLLECTION
-    match /users/{uid} {
-      allow read, write: if request.auth != null;
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // SAVED RECORDS
     match /savedRecords/{docId} {
-      allow read, write: if request.auth != null;
+      // Admins can read/write any record.
+      allow read, write: if isAdmin();
+      
+      // Users can list their own records.
+      allow list: if request.auth != null && request.auth.token.record == request.query.where.employeeId;
+
+      // Users can read/update/delete their own records.
+      allow read, update, delete: if request.auth != null && resource.data.employeeId == request.auth.token.record;
+
+      // Users can create records for themselves.
+      allow create: if request.auth != null && request.resource.data.employeeId == request.auth.token.record;
     }
 
     // UPLOADED FILES 
     match /uploadedFiles/{fileId} {
-      allow read, write: if request.auth != null;
+      // Admins can manage all files.
+      allow read, write: if isAdmin();
+
+      // Users can list their own files.
+      allow list: if request.auth != null && request.auth.token.record == request.query.where.employeeId;
+
+      // Users can read/update/delete their own file records.
+      allow read, update, delete: if request.auth != null && resource.data.employeeId == request.auth.token.record;
+
+      // Users can create file records for themselves.
+      allow create: if request.auth != null && request.resource.data.employeeId == request.auth.token.record;
     }
 
     // TASKS 
     match /tasks/{taskId} {
-      allow read, write: if request.auth != null;
+      // Any authenticated user can read any task.
+      allow read: if request.auth != null;
+      // Any authenticated user can create a task (for someone else).
+      allow create: if request.auth != null;
+      // Only the user who was assigned the task or the user who assigned the task can update or delete it.
+      allow update, delete: if request.auth != null && (resource.data.assignedTo == request.auth.token.record || resource.data.assignedById == request.auth.token.record || isAdmin());
     }
 
     // Deny everything else

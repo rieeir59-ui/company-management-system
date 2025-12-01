@@ -4,7 +4,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useFirebase } from '@/firebase/provider';
 import { collection, query, where, orderBy, type Timestamp, FirestoreError, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -48,7 +47,7 @@ type SavedRecord = {
     fileName: string;
     projectName: string;
     createdAt: Timestamp;
-    data: SavedRecordData;
+    data: SavedRecordData[] | Record<string, any>;
 };
 
 type TaskRecord = {
@@ -165,10 +164,9 @@ const handleDownload = (record: SavedRecord) => {
 
 export default function SavedRecordsPage() {
     const image = PlaceHolderImages.find(p => p.id === 'saved-records');
-    const { firestore, auth } = useFirebase();
+    const { firestore } = useFirebase();
     const { user: currentUser, isUserLoading } = useCurrentUser();
     const { toast } = useToast();
-    const { employees } = useEmployees();
 
     const [records, setRecords] = useState<SavedRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -178,52 +176,51 @@ export default function SavedRecordsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!firestore || !auth) return;
+        if (isUserLoading) {
+            setIsLoading(true);
+            return;
+        }
+        if (!firestore || !currentUser) {
+            setIsLoading(false);
+            setError("Authentication is required.");
+            return;
+        }
+
+        const isAuthorized = ['admin', 'software-engineer', 'ceo'].includes(currentUser.department);
+        const recordsCollection = collection(firestore, 'savedRecords');
         
-        const authUnsubscribe = onAuthStateChanged(auth, user => {
-            if (user && currentUser) {
-                const isAuthorized = ['admin', 'software-engineer', 'ceo'].includes(currentUser.department);
-                if (!isAuthorized) {
-                    setIsLoading(false);
-                    setError("You do not have permission to view this page.");
-                    setRecords([]);
-                    return;
-                }
+        let q;
+        if (isAuthorized) {
+            // Admins can see all records
+            q = query(recordsCollection, orderBy('createdAt', 'desc'));
+        } else {
+            // Regular users only see their own records
+            q = query(recordsCollection, where('employeeId', '==', currentUser.record), orderBy('createdAt', 'desc'));
+        }
 
-                const recordsCollection = collection(firestore, 'savedRecords');
-                const q = query(recordsCollection, orderBy('createdAt', 'desc'));
-
-                const firestoreUnsubscribe = onSnapshot(q,
-                    (querySnapshot) => {
-                        const fetchedRecords = querySnapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data()
-                        } as SavedRecord));
-                        setRecords(fetchedRecords);
-                        setError(null);
-                        setIsLoading(false);
-                    },
-                    (serverError: FirestoreError) => {
-                        const permissionError = new FirestorePermissionError({
-                            path: `savedRecords`,
-                            operation: 'list',
-                        });
-                        errorEmitter.emit('permission-error', permissionError);
-                        setError("Could not fetch records. You might not have the required permissions.");
-                        setIsLoading(false);
-                    }
-                );
-                return () => firestoreUnsubscribe();
-
-            } else if (!isUserLoading) {
-                 setIsLoading(false);
-                 setError("You must be logged in to view records.");
+        const unsubscribe = onSnapshot(q,
+            (querySnapshot) => {
+                const fetchedRecords = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                } as SavedRecord));
+                setRecords(fetchedRecords);
+                setError(null);
+                setIsLoading(false);
+            },
+            (serverError: FirestoreError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: `savedRecords`,
+                    operation: 'list',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                setError("Could not fetch records. You might not have the required permissions.");
+                setIsLoading(false);
             }
-        });
-        
-        return () => authUnsubscribe();
+        );
+        return () => unsubscribe();
             
-    }, [firestore, auth, currentUser, isUserLoading]);
+    }, [firestore, currentUser, isUserLoading]);
     
     const openDeleteDialog = (e: React.MouseEvent, record: SavedRecord) => {
         e.stopPropagation();
