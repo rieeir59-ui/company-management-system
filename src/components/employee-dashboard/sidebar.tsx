@@ -253,7 +253,7 @@ export default function EmployeeDashboardSidebar() {
                         {savedRecordsItems.map((item) => (
                            <SidebarMenuSubItem key={item.href}>
                             <Link href={item.href} passHref>
-                               <SidebarMenuSubButton isActive={pathname === item.href.split('?')[0]}>
+                               <SidebarMenuSubButton isActive={pathname === item.href.split('?')[0] && (new URLSearchParams(window.location.search).get('filter') === new URLSearchParams(item.href.split('?')[1]).get('filter'))}>
                                   <item.icon className="size-4 mr-2" />
                                   {item.label}
                                </SidebarMenuSubButton>
@@ -280,3 +280,6 @@ export default function EmployeeDashboardSidebar() {
       </Sidebar>
   );
 }
+
+
+    
