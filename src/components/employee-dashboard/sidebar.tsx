@@ -207,18 +207,16 @@ export default function EmployeeDashboardSidebar() {
               </SidebarMenuItem>
             ))}
              <Collapsible asChild>
-                  <div className="group/collapsible-menu-item">
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                         <SidebarMenuButton
-                            className="group-data-[collapsible=icon]:justify-center"
-                            tooltip="Timelines of Bank"
-                          >
-                            <Landmark className="size-5" />
-                            <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-                          </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                    </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                       <SidebarMenuButton
+                          className="group-data-[collapsible=icon]:justify-center"
+                          tooltip="Timelines of Bank"
+                        >
+                          <Landmark className="size-5" />
+                          <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
                     <CollapsibleContent asChild>
                       <SidebarMenuSub>
                         {bankTimelineItems.map((item) => (
@@ -233,27 +231,25 @@ export default function EmployeeDashboardSidebar() {
                         ))}
                       </SidebarMenuSub>
                     </CollapsibleContent>
-                  </div>
+                  </SidebarMenuItem>
               </Collapsible>
               <Collapsible asChild>
-                  <div className="group/collapsible-menu-item">
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                         <SidebarMenuButton
-                            className="group-data-[collapsible=icon]:justify-center"
-                            tooltip="Saved Records"
-                          >
-                            <Database className="size-5" />
-                            <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
-                          </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                    </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                       <SidebarMenuButton
+                          className="group-data-[collapsible=icon]:justify-center"
+                          tooltip="Saved Records"
+                        >
+                          <Database className="size-5" />
+                          <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
                     <CollapsibleContent asChild>
                       <SidebarMenuSub>
                         {savedRecordsItems.map((item) => (
                            <SidebarMenuSubItem key={item.href}>
                             <Link href={item.href} passHref>
-                               <SidebarMenuSubButton isActive={pathname === item.href.split('?')[0] && (new URLSearchParams(window.location.search).get('filter') === new URLSearchParams(item.href.split('?')[1]).get('filter'))}>
+                               <SidebarMenuSubButton isActive={pathname === item.href.split('?')[0] && (new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('filter') === new URLSearchParams(item.href.split('?')[1]).get('filter'))}>
                                   <item.icon className="size-4 mr-2" />
                                   {item.label}
                                </SidebarMenuSubButton>
@@ -262,7 +258,7 @@ export default function EmployeeDashboardSidebar() {
                         ))}
                       </SidebarMenuSub>
                     </CollapsibleContent>
-                  </div>
+                  </SidebarMenuItem>
               </Collapsible>
           </SidebarMenu>
         </SidebarContent>
@@ -280,6 +276,5 @@ export default function EmployeeDashboardSidebar() {
       </Sidebar>
   );
 }
-
 
     
