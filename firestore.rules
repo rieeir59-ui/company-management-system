@@ -3,28 +3,35 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // USERS COLLECTION
-    match /users/{uid} {
-      allow read, write: if request.auth != null;
+    // Only the authenticated user can read or write to their own document.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // SAVED RECORDS
+    // A user can create records for themselves.
+    // They can read, update, or delete records they created.
     match /savedRecords/{docId} {
-      allow read, write: if request.auth != null;
+      allow read, update, delete: if request.auth != null && resource.data.employeeId == request.auth.token.record;
+      allow create: if request.auth != null && request.resource.data.employeeId == request.auth.token.record;
     }
 
     // UPLOADED FILES 
+    // A user can create file records for themselves.
+    // They can read, update, or delete records they created.
     match /uploadedFiles/{fileId} {
-      allow read, write: if request.auth != null;
+      allow read, update, delete: if request.auth != null && resource.data.employeeId == request.auth.token.record;
+      allow create: if request.auth != null && request.resource.data.employeeId == request.auth.token.record;
     }
 
     // TASKS 
+    // Any authenticated user can create a task (for someone else).
+    // Only the user who was assigned the task or the user who assigned the task can update or delete it.
+    // Any authenticated user can read any task.
     match /tasks/{taskId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Deny everything else
-    match /{document=**} {
-      allow read, write: if false;
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (resource.data.assignedTo == request.auth.token.record || resource.data.assignedById == request.auth.token.record);
     }
   }
 }
