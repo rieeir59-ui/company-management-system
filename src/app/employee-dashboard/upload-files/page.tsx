@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { CreatableSelect } from '@/components/ui/creatable-select';
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { useFileRecords } from "@/context/FileContext";
 
 type FileUpload = {
   id: number;
@@ -31,12 +32,44 @@ const categories = [
 ];
 const initialBanks = ["MCB", "DIB", "FAYSAL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD"];
 
-
 const UploadForm = ({ category }: { category: string }) => {
     const [uploads, setUploads] = useState<FileUpload[]>([{ id: 1, file: null, customName: '', bankName: '', isUploading: false, progress: 0 }]);
     const [banks, setBanks] = useState<string[]>(initialBanks);
     const { toast } = useToast();
     const { user: currentUser } = useCurrentUser();
+    const { addFileRecord } = useFileRecords();
+
+    // Effect to handle adding the record after upload completes
+    useEffect(() => {
+        uploads.forEach(upload => {
+            if (upload.progress === 100 && upload.file && currentUser) {
+                const newRecord = {
+                    id: String(Date.now()),
+                    category: category,
+                    bankName: upload.bankName,
+                    customName: upload.customName,
+                    originalName: upload.file!.name,
+                    fileType: upload.file!.type,
+                    size: upload.file!.size,
+                    createdAt: new Date(),
+                    employeeName: currentUser.name,
+                    employeeId: currentUser.record,
+                    fileUrl: URL.createObjectURL(upload.file!) 
+                };
+                addFileRecord(newRecord);
+                toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
+                
+                // Set a timeout to remove the completed upload from the UI
+                setTimeout(() => {
+                    setUploads(prev => {
+                        const remaining = prev.filter(up => up.id !== upload.id);
+                        return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '', isUploading: false, progress: 0 }];
+                    });
+                }, 2000);
+            }
+        });
+    }, [uploads, addFileRecord, category, currentUser, toast]);
+
 
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
@@ -79,14 +112,12 @@ const UploadForm = ({ category }: { category: string }) => {
         
         setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0 } : up));
         
-        // Dummy upload simulation
         const interval = setInterval(() => {
             setUploads(prev => prev.map(up => {
-                if (up.id === upload.id) {
+                if (up.id === upload.id && up.isUploading) {
                     const newProgress = (up.progress || 0) + 10;
                     if (newProgress >= 100) {
                         clearInterval(interval);
-                         toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded (simulation).` });
                         return { ...up, isUploading: false, progress: 100 };
                     }
                     return { ...up, progress: newProgress };
@@ -94,13 +125,6 @@ const UploadForm = ({ category }: { category: string }) => {
                 return up;
             }));
         }, 200);
-
-        setTimeout(() => {
-             setUploads(prev => prev.filter(up => up.id !== upload.id));
-             if (uploads.length === 1) {
-                setUploads([{ id: 1, file: null, customName: '', bankName: '', isUploading: false, progress: 0 }]);
-            }
-        }, 3000);
     };
 
     return (
@@ -196,5 +220,3 @@ export default function UploadFilesPage() {
         </div>
     );
 }
-
-    
