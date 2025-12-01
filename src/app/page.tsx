@@ -1,42 +1,74 @@
-import Image from 'next/image';
-import Link from 'next/link';
+'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/context/UserContext';
 import Header from '@/components/layout/header';
+import { employees } from '@/lib/employees';
 
-export default function Home() {
-  const heroImage = PlaceHolderImages.find(p => p.id === 'hero-architecture');
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const router = useRouter();
+  const { toast } = useToast();
+  const { login } = useCurrentUser();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const employee = employees.find(emp => emp.email === email && emp.password === password);
+    
+    if (employee) {
+        login({ ...employee, uid: employee.record });
+        toast({
+            title: 'Login Successful',
+            description: `Welcome back, ${employee.name}!`,
+        });
+        if (['ceo', 'admin', 'software-engineer'].includes(employee.department)) {
+            router.push('/dashboard');
+        } else {
+            router.push('/employee-dashboard');
+        }
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'Invalid email or password.',
+        });
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-grow">
-        <section className="relative w-full h-[calc(100vh-4rem)] flex items-center justify-center text-center text-white">
-          {heroImage && (
-            <Image
-              src={heroImage.imageUrl}
-              alt={heroImage.description}
-              fill
-              className="object-cover"
-              priority
-              data-ai-hint={heroImage.imageHint}
-            />
-          )}
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="relative z-10 flex flex-col items-center space-y-6 px-4 animate-in fade-in slide-in-from-bottom-10 duration-1000 ease-out">
-            <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-shadow-lg">
-              ISBAH HASSAN & ASSOCIATES
-            </h1>
-            <p className="text-2xl md:text-3xl lg:text-4xl text-primary text-shadow-md">
-              Architecture Company
-            </p>
-            <Button asChild size="lg" className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-10 py-6 transition-transform hover:scale-105">
-              <Link href="/login">Start Now</Link>
-            </Button>
-          </div>
-        </section>
-      </main>
+      <div className="flex-grow flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle className="text-2xl">Login</CardTitle>
+            <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
+          </CardHeader>
+          <form onSubmit={handleLogin}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full" type="submit">Login</Button>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }

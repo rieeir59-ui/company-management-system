@@ -2,7 +2,6 @@
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { UserProvider } from '@/context/UserContext';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { EmployeeProvider } from '@/context/EmployeeContext';
 
 export default function RootLayout({
@@ -18,13 +17,11 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
-        <FirebaseClientProvider>
-          <EmployeeProvider>
-            <UserProvider>
-                {children}
-            </UserProvider>
-          </EmployeeProvider>
-        </FirebaseClientProvider>
+        <EmployeeProvider>
+          <UserProvider>
+              {children}
+          </UserProvider>
+        </EmployeeProvider>
         <Toaster />
       </body>
     </html>

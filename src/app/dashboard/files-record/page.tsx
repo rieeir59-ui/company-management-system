@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,10 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from "@/components/ui/button";
 import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase/provider';
-import { collection, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, type Timestamp, FirestoreError } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { getStorage, ref, deleteObject } from "firebase/storage";
 import { useCurrentUser } from '@/context/UserContext';
 import {
   AlertDialog,
@@ -35,8 +30,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 type UploadedFile = {
     id: string;
@@ -46,7 +39,7 @@ type UploadedFile = {
     originalName: string;
     fileType: string;
     size: number;
-    createdAt: Timestamp;
+    createdAt: Date;
     employeeName: string;
     fileUrl?: string;
 };
@@ -58,12 +51,18 @@ const categories = [
     { name: "Hotels", icon: Hotel }
 ];
 
+// Dummy data since we removed Firebase
+const dummyFiles: UploadedFile[] = [
+    { id: '1', category: 'Banks', bankName: 'MCB', customName: 'Q1 Report', originalName: 'q1_report_final.pdf', fileType: 'application/pdf', size: 1200000, createdAt: new Date(), employeeName: 'Rabiya Eman', fileUrl: '#' },
+    { id: '2', category: 'Residential', customName: 'Blueprint - Phase 1', originalName: 'blueprint_v2.dwg', fileType: 'image/vnd.dwg', size: 5600000, createdAt: new Date(), employeeName: 'Imran Abbas', fileUrl: '#' },
+    { id: '3', category: 'Commercial', customName: 'Tower Proposal', originalName: 'tower_proposal.docx', fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', size: 340000, createdAt: new Date(), employeeName: 'Asad', fileUrl: '#' },
+];
+
+
 export default function FilesRecordPage() {
   const image = PlaceHolderImages.find(p => p.id === 'files-record');
   const { toast } = useToast();
-  const { firestore, firebaseApp, auth } = useFirebase();
   const { user: currentUser } = useCurrentUser();
-  const storage = getStorage(firebaseApp);
 
   const [files, setFiles] = useState<Record<string, UploadedFile[]>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -79,48 +78,22 @@ export default function FilesRecordPage() {
 
 
   useEffect(() => {
-    if (!firestore || !auth) {
-        setError("Database connection not available.");
-        setIsLoading(false);
-        return;
-    }
-    
     setIsLoading(true);
-
-    const authUnsubscribe = onAuthStateChanged(auth, user => {
-        if (user) {
-            const q = query(collection(firestore, "uploadedFiles"), orderBy("createdAt", "desc"));
-    
-            const firestoreUnsubscribe = onSnapshot(q, (snapshot) => {
-              const allFiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UploadedFile));
-              
-              const groupedFiles: Record<string, UploadedFile[]> = {};
-              categories.forEach(category => {
-                  groupedFiles[category.name] = allFiles.filter(file => file.category === category.name);
-              });
-
-              setFiles(groupedFiles);
-              setError(null);
-              setIsLoading(false);
-            }, (err: FirestoreError) => {
-              const permissionError = new FirestorePermissionError({
-                  path: `uploadedFiles`,
-                  operation: 'list',
-              });
-              errorEmitter.emit('permission-error', permissionError);
-              setError("Failed to fetch files. You may not have permission.");
-              setIsLoading(false);
+    if (currentUser) {
+        // Simulate fetching data
+        setTimeout(() => {
+            const groupedFiles: Record<string, UploadedFile[]> = {};
+            categories.forEach(category => {
+                groupedFiles[category.name] = dummyFiles.filter(file => file.category === category.name);
             });
-            return () => firestoreUnsubscribe();
-        } else {
-            setFiles({});
-            setError("You must be logged in to view records.");
+            setFiles(groupedFiles);
             setIsLoading(false);
-        }
-    });
-
-    return () => authUnsubscribe();
-  }, [firestore, auth]);
+        }, 1000);
+    } else {
+        setError("You must be logged in to view records.");
+        setIsLoading(false);
+    }
+  }, [currentUser]);
   
   const formatBytes = (bytes: number, decimals = 2) => {
     if (bytes === 0) return '0 Bytes';
@@ -137,33 +110,17 @@ export default function FilesRecordPage() {
   };
   
   const confirmDelete = async () => {
-    if (!fileToDelete || !firestore || !storage) return;
-
-    // Create a reference to the file to delete
-    if (fileToDelete.fileUrl) {
-      try {
-        const fileRef = ref(storage, fileToDelete.fileUrl);
-        // Delete the file from Storage
-        await deleteObject(fileRef);
-      } catch (storageError: any) {
-        // If the file doesn't exist in storage, we can still proceed to delete the firestore doc
-        if (storageError.code !== 'storage/object-not-found') {
-          console.error("Error deleting file from Storage:", storageError);
-          toast({ variant: 'destructive', title: 'Storage Error', description: 'Could not delete the file from storage. The record might be orphaned.' });
-          // We might decide to stop here or continue to delete the Firestore record.
-          // For now, we'll let it continue to delete the record.
+    if (!fileToDelete) return;
+    // Dummy delete
+    toast({ title: 'Success', description: `File record for "${fileToDelete.customName}" deleted (simulation).` });
+    setFiles(prev => {
+        const newFiles = { ...prev };
+        if(newFiles[fileToDelete.category]) {
+            newFiles[fileToDelete.category] = newFiles[fileToDelete.category].filter(f => f.id !== fileToDelete.id);
         }
-      }
-    }
-    
-    try {
-        await deleteDoc(doc(firestore, 'uploadedFiles', fileToDelete.id));
-        toast({ title: 'Success', description: `File record for "${fileToDelete.customName}" deleted.` });
-    } catch (e) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not delete file record from database.' });
-    } finally {
-        setIsDeleteDialogOpen(false);
-    }
+        return newFiles;
+    });
+    setIsDeleteDialogOpen(false);
   };
   
   const openEditDialog = (file: UploadedFile) => {
@@ -173,17 +130,17 @@ export default function FilesRecordPage() {
   };
 
   const confirmEdit = async () => {
-    if (!fileToEdit || !newFileName || !firestore) return;
-    try {
-      await updateDoc(doc(firestore, 'uploadedFiles', fileToEdit.id), {
-        customName: newFileName
-      });
-      toast({ title: 'Success', description: 'File name updated.' });
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not update file name.' });
-    } finally {
-      setIsEditDialogOpen(false);
-    }
+    if (!fileToEdit || !newFileName) return;
+    // Dummy edit
+    toast({ title: 'Success', description: 'File name updated (simulation).' });
+    setFiles(prev => {
+        const newFiles = { ...prev };
+        if(newFiles[fileToEdit.category]) {
+            newFiles[fileToEdit.category] = newFiles[fileToEdit.category].map(f => f.id === fileToEdit.id ? {...f, customName: newFileName} : f);
+        }
+        return newFiles;
+    });
+    setIsEditDialogOpen(false);
   };
 
   return (
@@ -253,7 +210,7 @@ export default function FilesRecordPage() {
                                             <td className="p-2 text-muted-foreground">{file.originalName}</td>
                                             <td className="p-2">{formatBytes(file.size)}</td>
                                             <td className="p-2">{file.employeeName}</td>
-                                            <td className="p-2">{file.createdAt.toDate().toLocaleDateString()}</td>
+                                            <td className="p-2">{file.createdAt.toLocaleDateString()}</td>
                                             <td className="p-2 flex gap-1 justify-end">
                                                 <Button asChild variant="ghost" size="icon">
                                                     <a href={file.fileUrl || '#'} target="_blank" rel="noopener noreferrer" download={file.originalName}>

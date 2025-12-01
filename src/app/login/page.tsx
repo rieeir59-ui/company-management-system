@@ -9,64 +9,37 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import Header from '@/components/layout/header';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
-import { useFirebase } from '@/firebase/provider';
 import { employees } from '@/lib/employees';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
   const { toast } = useToast();
-  const { auth } = useFirebase();
+  const { login } = useCurrentUser();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "Firebase auth is not initialized.",
-        });
-        return;
-    }
 
-    const employee = employees.find(emp => emp.email === email);
+    const employee = employees.find(emp => emp.email === email && emp.password === password);
     
-    if (!employee) {
+    if (employee) {
+        login({ ...employee, uid: employee.record });
+        toast({
+            title: 'Login Successful',
+            description: `Welcome back, ${employee.name}!`,
+        });
+        if (['ceo', 'admin', 'software-engineer'].includes(employee.department)) {
+            router.push('/dashboard');
+        } else {
+            router.push('/employee-dashboard');
+        }
+    } else {
         toast({
             variant: 'destructive',
             title: 'Login Failed',
-            description: 'This email is not registered in the employee directory.',
+            description: 'Invalid email or password.',
         });
-        return;
-    }
-    
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-        // onAuthStateChanged will handle redirect and toast
-    } catch (error: any) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-            // If user doesn't exist, create them
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                // User will be auto-signed-in, onAuthStateChanged will handle the rest
-            } catch (createError: any) {
-                 toast({
-                    variant: "destructive",
-                    title: "Signup Failed",
-                    description: createError.message,
-                });
-            }
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Login Failed",
-                description: error.message,
-            });
-        }
     }
   };
 

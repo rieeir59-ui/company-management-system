@@ -1,9 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useFirebase } from '@/firebase/provider';
-import { collection, query, orderBy, type Timestamp, FirestoreError, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -20,8 +17,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useCurrentUser } from '@/context/UserContext';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
 import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import jsPDF from 'jspdf';
@@ -46,7 +41,7 @@ type SavedRecord = {
     employeeName: string;
     fileName: string;
     projectName: string;
-    createdAt: Timestamp;
+    createdAt: Date;
     data: SavedRecordData[] | Record<string, any>;
 };
 
@@ -60,6 +55,14 @@ type TaskRecord = {
     endDate: string;
     status: 'not-started' | 'in-progress' | 'completed';
 };
+
+// Dummy Data
+const dummyRecords: SavedRecord[] = [
+    {id: '1', employeeId: 'EMP-004', employeeName: 'Rabiya Eman', fileName: 'Project Checklist', projectName: 'Alpha Tower', createdAt: new Date(), data: [{category: 'Checklist', items: ['Item 1', 'Item 2']}]},
+    {id: '2', employeeId: 'EMP-005', employeeName: 'Imran Abbas', fileName: 'Bill of Quantity', projectName: 'Beta Complex', createdAt: new Date(), data: [{category: 'BOQ', items: ['Cement: 100 bags']}]},
+    {id: '3', employeeId: 'EMP-004', employeeName: 'Rabiya Eman', fileName: 'Task Assignment', projectName: 'Alpha Tower - Foundation', createdAt: new Date(), data: [{category: 'Task Assignment', items: ['taskName: Foundation Work', 'assignedTo: Imran Abbas', 'status: in-progress']}]},
+];
+
 
 const StatusIcon = ({ status }: { status: TaskRecord['status'] }) => {
     switch (status) {
@@ -87,7 +90,7 @@ const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
     const headerData = [
         [`File: ${record.fileName}`],
         [`Saved by: ${record.employeeName}`],
-        [`Date: ${record.createdAt.toDate().toLocaleDateString()}`],
+        [`Date: ${record.createdAt.toLocaleDateString()}`],
     ];
 
     (doc as any).autoTable({
@@ -164,65 +167,16 @@ const handleDownload = (record: SavedRecord) => {
 
 export default function SavedRecordsPage() {
     const image = PlaceHolderImages.find(p => p.id === 'saved-records');
-    const { firestore, auth } = useFirebase();
     const { user: currentUser, isUserLoading } = useCurrentUser();
     const { toast } = useToast();
     const { employees } = useEmployees();
 
-    const [records, setRecords] = useState<SavedRecord[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [records, setRecords] = useState<SavedRecord[]>(dummyRecords);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!firestore || !auth) return;
-        
-        const authUnsubscribe = onAuthStateChanged(auth, user => {
-            if (user && currentUser) {
-                const isAuthorized = ['admin', 'software-engineer', 'ceo'].includes(currentUser.department);
-                if (!isAuthorized) {
-                    setIsLoading(false);
-                    setError("You do not have permission to view this page.");
-                    setRecords([]);
-                    return;
-                }
-
-                const recordsCollection = collection(firestore, 'savedRecords');
-                const q = query(recordsCollection, orderBy('createdAt', 'desc'));
-
-                const firestoreUnsubscribe = onSnapshot(q,
-                    (querySnapshot) => {
-                        const fetchedRecords = querySnapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data()
-                        } as SavedRecord));
-                        setRecords(fetchedRecords);
-                        setError(null);
-                        setIsLoading(false);
-                    },
-                    (serverError: FirestoreError) => {
-                        const permissionError = new FirestorePermissionError({
-                            path: `savedRecords`,
-                            operation: 'list',
-                        });
-                        errorEmitter.emit('permission-error', permissionError);
-                        setError("Could not fetch records. You might not have the required permissions.");
-                        setIsLoading(false);
-                    }
-                );
-                return () => firestoreUnsubscribe();
-
-            } else if (!isUserLoading) {
-                 setIsLoading(false);
-                 setError("You must be logged in to view records.");
-            }
-        });
-        
-        return () => authUnsubscribe();
-            
-    }, [firestore, auth, currentUser, isUserLoading]);
     
     const openDeleteDialog = (e: React.MouseEvent, record: SavedRecord) => {
         e.stopPropagation();
@@ -231,41 +185,34 @@ export default function SavedRecordsPage() {
     };
 
     const confirmDelete = async () => {
-        if (!recordToDelete || !firestore) return;
-
-        const docRef = doc(firestore, 'savedRecords', recordToDelete.id);
-        try {
-            await deleteDoc(docRef);
-        } catch (serverError) {
-            console.error("Error deleting document:", serverError);
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'delete',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } finally {
-            setIsDeleteDialogOpen(false);
-            setRecordToDelete(null);
-        }
+        if (!recordToDelete) return;
+        setRecords(prev => prev.filter(r => r.id !== recordToDelete.id));
+        toast({ title: 'Record Deleted', description: 'The record has been deleted (simulation).' });
+        setIsDeleteDialogOpen(false);
+        setRecordToDelete(null);
     };
     
     const handleStatusChange = async (taskId: string, newStatus: TaskRecord['status']) => {
-        if (!firestore) return;
-        const taskRef = doc(firestore, 'tasks', taskId);
-        try {
-          await updateDoc(taskRef, { status: newStatus });
-          toast({
+        setRecords(prevRecords => prevRecords.map(rec => {
+            if(rec.id === taskId) {
+                const newData = rec.data.map((d: any) => {
+                    if (d.category === 'Task Assignment') {
+                        return {
+                            ...d,
+                            items: d.items.map((item: string) => item.startsWith('status:') ? `status: ${newStatus}` : item)
+                        }
+                    }
+                    return d;
+                });
+                return {...rec, data: newData};
+            }
+            return rec;
+        }));
+
+        toast({
             title: 'Status Updated',
             description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
-          });
-        } catch (serverError) {
-          const permissionError = new FirestorePermissionError({
-            path: `tasks/${taskId}`,
-            operation: 'update',
-            requestResourceData: { status: newStatus }
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        }
+        });
       };
 
 
@@ -417,7 +364,7 @@ export default function SavedRecordsPage() {
                                                         <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
                                                             <TableCell>{record.employeeName}</TableCell>
                                                             <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                            <TableCell>{record.createdAt.toDate().toLocaleDateString()}</TableCell>
+                                                            <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
                                                             <TableCell className="text-right">
                                                                 <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                                                                     {formUrl && (
