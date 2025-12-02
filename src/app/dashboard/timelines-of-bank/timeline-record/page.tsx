@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { useFirebase } from '@/firebase/provider';
-import { collection, query, where, getDocs, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc } from 'firebase/firestore';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
-import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink } from "lucide-react";
+import { Download, Loader2, Edit, Trash2, ArrowLeft } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,15 +17,13 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useCurrentUser } from '@/context/UserContext';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
 import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { cn } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-import { useToast } from '@/hooks/use-toast';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { useSearchParams } from 'next/navigation';
 
@@ -135,7 +131,7 @@ const handleDownload = (record: SavedRecord) => {
     doc.output('dataurlnewwindow');
 };
 
-export default function TimelineRecordsPage() {
+function TimelineRecordsComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'time-line-schedule');
     const { user: currentUser, isUserLoading } = useCurrentUser();
     const { records, isLoading, error, deleteRecord } = useRecords();
@@ -339,4 +335,15 @@ export default function TimelineRecordsPage() {
             </AlertDialog>
         </>
     );
+}
+
+export default function TimelineRecordsPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-4">Loading Page...</span>
+          </div>}>
+            <TimelineRecordsComponent />
+        </Suspense>
+    )
 }
