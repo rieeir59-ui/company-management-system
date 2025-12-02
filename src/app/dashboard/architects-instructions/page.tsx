@@ -64,7 +64,7 @@ export default function Page() {
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormState(prev => ({ ...prev, [e.target.name]: value }));
+        setFormState(prev => ({ ...prev, [name]: value }));
         if (name === 'projectName') {
             setProjectName(value);
         }

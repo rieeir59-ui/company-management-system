@@ -18,21 +18,32 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<(Employee & { uid: string }) | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate checking for a logged-in user
-    // In a real app, you might check localStorage or a cookie
-    setIsUserLoading(false); 
+    // This effect runs only on the client
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      } catch (e) {
+        console.error("Failed to parse user from localStorage", e);
+        setUser(null);
+        localStorage.removeItem('user');
+      }
+    }
+    setIsUserLoading(false);
   }, []);
 
   const login = (loggedInUser: Employee & { uid: string }) => {
     setUser(loggedInUser);
+    localStorage.setItem('user', JSON.stringify(loggedInUser));
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('user');
     toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",

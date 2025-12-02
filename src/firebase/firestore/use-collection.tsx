@@ -67,7 +67,8 @@ export function useCollection<T = any>(
   useEffect(() => {
     if (!auth) {
         setIsLoading(false);
-        setError(new Error("Firebase Auth not available."));
+        // Do not set an error, as auth might not be initialized yet.
+        // The onAuthStateChanged will handle the auth state.
         return;
     }
 
