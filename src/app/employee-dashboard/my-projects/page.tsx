@@ -256,12 +256,12 @@ function MyProjectsComponent() {
           employeeName: currentUser.name,
           fileName: "My Projects",
           projectName: `Projects for ${currentUser.name}`,
-          data: {
+          data: [{
               category: 'My Projects',
               schedule,
               projects: rows,
               remarks,
-          },
+          }],
           createdAt: serverTimestamp(),
       };
 
@@ -510,7 +510,7 @@ export default function EmployeeDashboardPageWrapper() {
         <Loader2 className="h-8 w-8 animate-spin" />
         <span className="ml-4">Loading Page...</span>
       </div>}>
-      <EmployeeDashboardComponent />
+      <MyProjectsComponent />
     </Suspense>
   )
 }
