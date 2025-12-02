@@ -1,8 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import React, { memo } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -65,7 +65,6 @@ import {
   Save,
   Eye,
   Archive,
-  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -155,20 +154,99 @@ const getInitials = (name: string) => {
     return name[0] ? name[0].toUpperCase() : '';
 }
 
-export default function EmployeeDashboardSidebar() {
+// Memoized Menu to prevent re-renders on path changes
+const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems, savedRecordsItems }: { menuItems: any[], bankTimelineItems: any[], savedRecordsItems: any[] }) => {
   const pathname = usePathname();
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+
+  return (
+    <SidebarMenu>
+      {menuItems.map((item) => (
+        <SidebarMenuItem key={item.href}>
+          <Link href={item.href} passHref>
+              <SidebarMenuButton
+                  isActive={pathname === item.href}
+                  className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
+                  tooltip={item.label}
+              >
+                  <item.icon className="size-5" />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+              </SidebarMenuButton>
+          </Link>
+        </SidebarMenuItem>
+      ))}
+       <Collapsible asChild>
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                 <SidebarMenuButton
+                    className="group-data-[collapsible=icon]:justify-center"
+                    tooltip="Timelines of Bank"
+                  >
+                    <Landmark className="size-5" />
+                    <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+                  </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent asChild>
+                <SidebarMenuSub>
+                  {bankTimelineItems.map((item) => (
+                     <SidebarMenuSubItem key={item.href}>
+                      <Link href={item.href} passHref>
+                         <SidebarMenuSubButton isActive={pathname === item.href}>
+                            <item.icon className="size-4 mr-2" />
+                            {item.label}
+                         </SidebarMenuSubButton>
+                      </Link>
+                     </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+        </Collapsible>
+        <Collapsible asChild>
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                 <SidebarMenuButton
+                    className="group-data-[collapsible=icon]:justify-center"
+                    tooltip="Saved Records"
+                  >
+                    <Database className="size-5" />
+                    <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
+                  </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent asChild>
+                <SidebarMenuSub>
+                  {savedRecordsItems.map((item) => (
+                     <SidebarMenuSubItem key={item.href}>
+                      <Link href={item.href} passHref>
+                         <SidebarMenuSubButton isActive={pathname === item.href.split('?')[0] && searchParams.get('filter') === new URLSearchParams(item.href.split('?')[1]).get('filter')}>
+                            <item.icon className="size-4 mr-2" />
+                            {item.label}
+                         </SidebarMenuSubButton>
+                      </Link>
+                     </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+        </Collapsible>
+    </SidebarMenu>
+  );
+});
+MemoizedSidebarMenu.displayName = 'MemoizedSidebarMenu';
+
+export default function EmployeeDashboardSidebar() {
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser, logout } = useCurrentUser();
 
-  const handleLogout = () => {
+  const handleLogout = React.useCallback(() => {
     logout();
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
     router.push('/login');
-  };
+  }, [logout, router, toast]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -192,76 +270,11 @@ export default function EmployeeDashboardSidebar() {
               <SidebarSeparator />
             </>
           )}
-          <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <Link href={item.href} passHref>
-                    <SidebarMenuButton
-                        isActive={pathname === item.href}
-                        className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
-                        tooltip={item.label}
-                    >
-                        <item.icon className="size-5" />
-                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                    </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
-             <Collapsible asChild>
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                       <SidebarMenuButton
-                          className="group-data-[collapsible=icon]:justify-center"
-                          tooltip="Timelines of Bank"
-                        >
-                          <Landmark className="size-5" />
-                          <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-                        </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent asChild>
-                      <SidebarMenuSub>
-                        {bankTimelineItems.map((item) => (
-                           <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} passHref>
-                               <SidebarMenuSubButton isActive={pathname === item.href}>
-                                  <item.icon className="size-4 mr-2" />
-                                  {item.label}
-                               </SidebarMenuSubButton>
-                            </Link>
-                           </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-              </Collapsible>
-              <Collapsible asChild>
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                       <SidebarMenuButton
-                          className="group-data-[collapsible=icon]:justify-center"
-                          tooltip="Saved Records"
-                        >
-                          <Database className="size-5" />
-                          <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
-                        </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent asChild>
-                      <SidebarMenuSub>
-                        {savedRecordsItems.map((item) => (
-                           <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} passHref>
-                               <SidebarMenuSubButton isActive={pathname === item.href.split('?')[0] && (new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('filter') === new URLSearchParams(item.href.split('?')[1]).get('filter'))}>
-                                  <item.icon className="size-4 mr-2" />
-                                  {item.label}
-                               </SidebarMenuSubButton>
-                            </Link>
-                           </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-              </Collapsible>
-          </SidebarMenu>
+          <MemoizedSidebarMenu 
+            menuItems={menuItems} 
+            bankTimelineItems={bankTimelineItems} 
+            savedRecordsItems={savedRecordsItems}
+          />
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarSeparator />

@@ -1,8 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import React, { memo } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -12,15 +12,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarSeparator,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from '@/components/ui/collapsible';
 import {
   LayoutDashboard,
   Users,
@@ -41,7 +33,6 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-
 const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/employee', label: 'Employees', icon: Users },
@@ -55,7 +46,7 @@ const menuItems = [
     { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
     { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin'] },
   ];
-
+  
 const getInitials = (name: string) => {
     if (!name) return '';
     const nameParts = name.split(' ');
@@ -65,24 +56,46 @@ const getInitials = (name: string) => {
     return name[0] ? name[0].toUpperCase() : '';
 }
 
-export default function DashboardSidebar() {
+// Memoized Menu to prevent re-renders on path changes
+const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: typeof menuItems }) => {
   const pathname = usePathname();
+  return (
+    <SidebarMenu>
+      {visibleMenuItems.map((item) => (
+        <SidebarMenuItem key={item.href}>
+          <Link href={item.href} passHref>
+              <SidebarMenuButton
+                  isActive={pathname === item.href}
+                  className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
+                  tooltip={item.label}
+              >
+                  <item.icon className="size-5" />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+              </SidebarMenuButton>
+          </Link>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  );
+});
+MemoizedSidebarMenu.displayName = 'MemoizedSidebarMenu';
+
+export default function DashboardSidebar() {
   const { user: currentUser, logout } = useCurrentUser();
   const { toast } = useToast();
   const router = useRouter();
 
-  const handleLogout = () => {
+  const handleLogout = React.useCallback(() => {
     logout();
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
     router.push('/login');
-  };
+  }, [logout, router, toast]);
 
   const visibleMenuItems = menuItems.filter(item => {
     if (!item.roles) return true;
-    // if a role is available, check if the user has one of the required roles
     return currentUser && item.roles.includes(currentUser.department);
   });
   
@@ -108,22 +121,7 @@ export default function DashboardSidebar() {
               <SidebarSeparator />
             </>
           )}
-          <SidebarMenu>
-            {visibleMenuItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <Link href={item.href} passHref>
-                    <SidebarMenuButton
-                        isActive={pathname === item.href}
-                        className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
-                        tooltip={item.label}
-                    >
-                        <item.icon className="size-5" />
-                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                    </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+          <MemoizedSidebarMenu visibleMenuItems={visibleMenuItems} />
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarSeparator />

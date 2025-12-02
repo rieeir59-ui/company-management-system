@@ -1,14 +1,13 @@
-
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useFirebase } from '@/firebase/provider';
 import { collection, query, where, getDocs, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc } from 'firebase/firestore';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,24 +22,14 @@ import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
-import { getFormUrlFromFileName } from '@/lib/utils';
+import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-
-type SavedRecordData = {
-    category: string;
-    items: string[];
-}[];
-
-type SavedRecord = {
-    id: string;
-    employeeId: string;
-    employeeName: string;
-    fileName: string;
-    projectName: string;
-    createdAt: Timestamp;
-    data: SavedRecordData;
-};
+import { cn } from '@/lib/utils';
+import { getIconForFile } from '@/lib/icons';
+import { useToast } from '@/hooks/use-toast';
+import { useRecords, type SavedRecord } from '@/context/RecordContext';
+import { useSearchParams } from 'next/navigation';
 
 const timelineFileNames = [
     'Timeline Schedule',
@@ -57,158 +46,173 @@ const timelineFileNames = [
     'UBL Timeline',
 ];
 
+const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
+    let yPos = 20;
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(record.projectName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    
+    const headerData = [
+        [`File: ${record.fileName}`],
+        [`Saved by: ${record.employeeName}`],
+        [`Date: ${new Date(record.createdAt).toLocaleDateString()}`],
+    ];
+
+    (doc as any).autoTable({
+        startY: yPos,
+        theme: 'plain',
+        body: headerData,
+        styles: { fontSize: 10 },
+    });
+
+    yPos = (doc as any).autoTable.previous.finalY + 10;
+    
+    const dataArray = Array.isArray(record.data) ? record.data : [record.data];
+
+    dataArray.forEach((section: any) => {
+        if (yPos > 260) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        const body: (string | number)[][] = [];
+
+        if (section.items && Array.isArray(section.items)) {
+            section.items.forEach((item: any) => {
+                let parsedItem = {};
+                let isParsed = false;
+                try {
+                    if (typeof item === 'string') {
+                        if (item.trim().startsWith('{') && item.trim().endsWith('}')) {
+                            parsedItem = JSON.parse(item);
+                            isParsed = true;
+                        }
+                    } else if (typeof item === 'object' && item !== null) {
+                        parsedItem = item;
+                        isParsed = true;
+                    }
+                } catch {}
+
+                if (isParsed) {
+                     Object.entries(parsedItem).forEach(([key, value]) => {
+                        if (typeof value !== 'object' && value !== null && key !== 'id' && key !== 'isHeader') {
+                            const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                            body.push([formattedKey, String(value)]);
+                        }
+                    });
+                } else {
+                     const parts = String(item).split(':');
+                    if (parts.length > 1) {
+                        body.push([parts[0], parts.slice(1).join(':').trim()]);
+                    } else {
+                        body.push([item, '']);
+                    }
+                }
+            });
+        }
+        
+        if (body.length > 0) {
+            (doc as any).autoTable({
+                head: [[section.category || 'Details']],
+                body: body,
+                startY: yPos,
+                theme: 'grid',
+                headStyles: { fontStyle: 'bold', fillColor: [45, 95, 51], textColor: 255 },
+                styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
+            });
+            yPos = (doc as any).autoTable.previous.finalY + 10;
+        }
+    });
+}
+
+const handleDownload = (record: SavedRecord) => {
+    const doc = new jsPDF() as any;
+    generateDefaultPdf(doc, record);
+    doc.output('dataurlnewwindow');
+};
+
 export default function TimelineRecordsPage() {
     const image = PlaceHolderImages.find(p => p.id === 'time-line-schedule');
-    const { firestore } = useFirebase();
     const { user: currentUser, isUserLoading } = useCurrentUser();
-
-    const [records, setRecords] = useState<SavedRecord[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { records, isLoading, error, deleteRecord } = useRecords();
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const searchParams = useSearchParams();
+    const filterParam = searchParams.get('filter');
 
     useEffect(() => {
-        if (isUserLoading) {
-            setIsLoading(true);
-            return;
+        if(filterParam) {
+            setSelectedCategory(filterParam);
+        } else {
+            setSelectedCategory(null);
         }
+    }, [filterParam]);
 
-        if (!firestore) {
-            setIsLoading(false);
-            setError("Firestore is not available.");
-            return;
-        }
-        
-        if (!currentUser) {
-            setIsLoading(false);
-            setError("You must be logged in to view records.");
-            return;
-        }
-        
-        const isAuthorized = ['admin', 'software-engineer', 'ceo'].includes(currentUser.department);
-        if (!isAuthorized) {
-            setIsLoading(false);
-            setError("You do not have permission to view this page.");
-            setRecords([]);
-            return;
-        }
+    const timelineRecords = useMemo(() => {
+        return records.filter(rec => timelineFileNames.includes(rec.fileName));
+    }, [records]);
 
-        const recordsCollection = collection(firestore, 'savedRecords');
-        const q = query(
-            recordsCollection, 
-            where('fileName', 'in', timelineFileNames),
-            orderBy('createdAt', 'desc')
-        );
-
-        const unsubscribe = onSnapshot(q, 
-            (querySnapshot) => {
-                const fetchedRecords = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                } as SavedRecord));
-                setRecords(fetchedRecords);
-                setError(null);
-                setIsLoading(false);
-            },
-            (serverError: FirestoreError) => {
-                console.error("Firestore Error:", serverError);
-                const permissionError = new FirestorePermissionError({
-                    path: 'savedRecords',
-                    operation: 'list'
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                setError(permissionError.message);
-                setIsLoading(false);
-            }
-        );
-        
-        return () => unsubscribe();
-            
-    }, [firestore, currentUser, isUserLoading]);
-
-    const handleDownload = (record: SavedRecord) => {
-        const doc = new jsPDF();
-        let yPos = 20;
-
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(record.projectName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-        yPos += 10;
-        
-        doc.setFontSize(10);
-        doc.text(`File: ${record.fileName}`, 14, yPos);
-        yPos += 7;
-        doc.text(`Saved by: ${record.employeeName}`, 14, yPos);
-        yPos += 7;
-        doc.text(`Date: ${record.createdAt.toDate().toLocaleDateString()}`, 14, yPos);
-        yPos += 10;
-
-        record.data.forEach(section => {
-            if (yPos > 260) {
-                doc.addPage();
-                yPos = 20;
-            }
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text(section.category, 14, yPos);
-            yPos += 10;
-
-            const body = section.items.map(item => {
-                const parts = item.split(':');
-                if (parts.length > 1) {
-                    return [parts[0], parts.slice(1).join(':').trim()];
-                }
-                return [item, ''];
-            });
-
-            (doc as any).autoTable({
-                startY: yPos,
-                body: body,
-                theme: 'plain',
-                styles: { fontSize: 9 }
-            });
-
-            yPos = (doc as any).autoTable.previous.finalY + 10;
-        });
-
-        doc.save(`${record.projectName.replace(/\s+/g, '_')}_${record.fileName.replace(/\s+/g, '_')}.pdf`);
-    };
-
-    const openDeleteDialog = (record: SavedRecord) => {
+    const openDeleteDialog = (e: React.MouseEvent, record: SavedRecord) => {
+        e.stopPropagation();
         setRecordToDelete(record);
         setIsDeleteDialogOpen(true);
     };
 
     const confirmDelete = async () => {
-        if (!recordToDelete || !firestore) return;
-
-        const docRef = doc(firestore, 'savedRecords', recordToDelete.id);
-        try {
-            await deleteDoc(docRef);
-        } catch (serverError) {
-            console.error("Error deleting document:", serverError);
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'delete',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } finally {
-            setIsDeleteDialogOpen(false);
-            setRecordToDelete(null);
-        }
+        if (!recordToDelete) return;
+        deleteRecord(recordToDelete.id);
+        setIsDeleteDialogOpen(false);
+        setRecordToDelete(null);
     };
 
+    const groupedRecords = useMemo(() => {
+        const grouped = timelineRecords.reduce((acc, record) => {
+            const fileName = record.fileName;
+            if (!acc[fileName]) {
+                acc[fileName] = [];
+            }
+            acc[fileName].push(record);
+            return acc;
+        }, {} as Record<string, SavedRecord[]>);
+        
+        timelineFileNames.forEach(name => {
+            if (!grouped[name]) {
+                grouped[name] = [];
+            }
+        });
+        
+        return grouped;
+    }, [timelineRecords]);
 
-    if (isLoading) {
+    const isAuthorized = useMemo(() => {
+        if (isUserLoading || !currentUser) return false;
+        return ['admin', 'software-engineer', 'ceo'].includes(currentUser.department);
+    }, [currentUser, isUserLoading]);
+
+
+    if (isLoading || isUserLoading) {
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="ml-4">Loading timeline records...</span>
+                <span className="ml-4">Verifying access and loading records...</span>
             </div>
         )
     }
 
+    if (!isAuthorized) {
+        return (
+             <Card className="text-center py-12 bg-destructive/10 border-destructive">
+                <CardHeader><CardTitle className="text-destructive">Access Denied</CardTitle></CardHeader>
+                <CardContent><p className="text-destructive/90">You do not have permission to view this page.</p></CardContent>
+            </Card>
+        );
+    }
+    
     return (
         <>
             <div className="space-y-8">
@@ -218,65 +222,105 @@ export default function TimelineRecordsPage() {
                     imageUrl={image?.imageUrl || ''}
                     imageHint={image?.imageHint || ''}
                 />
-
+                
                 {error && (
                      <Card className="text-center py-12 bg-destructive/10 border-destructive">
-                        <CardHeader>
-                            <CardTitle className="text-destructive">Access Denied</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-destructive/90">{error}</p>
-                        </CardContent>
+                        <CardHeader><CardTitle className="text-destructive">Error</CardTitle></CardHeader>
+                        <CardContent><p className="text-destructive/90">{error}</p></CardContent>
                     </Card>
                 )}
 
-                {!isLoading && !error && records.length === 0 && (
-                    <Card className="text-center py-12">
+                {!isLoading && !error && selectedCategory ? (
+                    <Card>
                         <CardHeader>
-                            <CardTitle>No Timeline Records Found</CardTitle>
+                            <div className="flex items-center gap-4">
+                                <Button variant="outline" size="icon" onClick={() => setSelectedCategory(null)}>
+                                    <ArrowLeft className="h-4 w-4" />
+                                </Button>
+                                <div>
+                                    <CardTitle>{selectedCategory}</CardTitle>
+                                    <CardDescription>All records saved as "{selectedCategory}".</CardDescription>
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground">No one has saved any timeline-related records yet.</p>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {!isLoading && !error && records.length > 0 && (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {records.map(record => {
-                           const formUrl = getFormUrlFromFileName(record.fileName, 'dashboard');
-                           return (
-                            <Card key={record.id} className="flex flex-col">
-                                <CardHeader>
-                                    <CardTitle>{record.projectName}</CardTitle>
-                                    <CardDescription>{record.fileName}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex-grow space-y-2">
-                                    <div className="text-sm text-muted-foreground">
-                                        Saved by {record.employeeName} on: {record.createdAt.toDate().toLocaleDateString()}
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="flex-col items-stretch space-y-2">
-                                    <div className="flex gap-2">
-                                        {formUrl && (
-                                            <Button asChild className="flex-1">
-                                                <Link href={`${formUrl}?id=${record.id}`}>
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit
-                                                </Link>
-                                            </Button>
+                             <div className="border rounded-lg">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Employee Name</TableHead>
+                                            <TableHead>Project Name</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right w-[100px]">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {groupedRecords[selectedCategory] && groupedRecords[selectedCategory].length > 0 ? (
+                                            groupedRecords[selectedCategory].map(record => {
+                                                const formUrl = getFormUrlFromFileName(record.fileName, 'dashboard');
+                                                return (
+                                                    <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
+                                                        <TableCell>{record.employeeName}</TableCell>
+                                                        <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                        <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                                                {formUrl && (
+                                                                    <Button asChild variant="ghost" size="icon">
+                                                                        <Link href={`${formUrl}?id=${record.id}`}>
+                                                                            <Edit className="h-4 w-4" />
+                                                                        </Link>
+                                                                    </Button>
+                                                                )}
+                                                                <Button variant="ghost" size="icon" onClick={(e) => openDeleteDialog(e, record)}>
+                                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                                    No records found for this category.
+                                                </TableCell>
+                                            </TableRow>
                                         )}
-                                        <Button variant="destructive" size="icon" onClick={() => openDeleteDialog(record)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <Button onClick={() => handleDownload(record)} variant="outline" className="w-full">
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download PDF
-                                    </Button>
-                                </CardFooter>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ) : (
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {Object.entries(groupedRecords).map(([fileName, fileRecords]) => {
+                           const Icon = getIconForFile(fileName);
+                           return (
+                            <Card 
+                                key={fileName} 
+                                className="flex flex-col justify-between cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all"
+                                onClick={() => setSelectedCategory(fileName)}
+                            >
+                                <CardHeader className="flex-row items-start gap-4 space-y-0 pb-2">
+                                   <div className="bg-primary/10 p-3 rounded-full">
+                                        <Icon className="h-6 w-6 text-primary" />
+                                   </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <CardTitle className="text-lg font-semibold">{fileName}</CardTitle>
+                                    <p className="text-sm text-muted-foreground">{fileRecords.length} record(s)</p>
+                                </CardContent>
                             </Card>
-                        )})}
+                           )
+                        })}
                     </div>
+                )}
+                 {timelineRecords.length === 0 && !isLoading && !error && !selectedCategory && (
+                    <Card className="text-center py-12">
+                        <CardHeader><CardTitle>No Timeline Records Found</CardTitle></CardHeader>
+                        <CardContent><p className="text-muted-foreground">No one has saved any timeline-related records yet.</p></CardContent>
+                    </Card>
                 )}
             </div>
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
